@@ -65,11 +65,21 @@ class simulation:
 
         self.newvalue=None
 
+        self.TeO2=None
+        self.TeO2err=None
+        self.TeO3=None
+        self.TeO3err=None
         self.TeN2=None
         self.TeN2err=None
+        self.TeS2=None
+        self.TeS2err=None
+        self.TeS3=None
+        self.TeS3err=None
+        self.neO2=None
+        self.neO2err=None
+        self.neS2=None
+        self.neS2err=None
 
-        # Amrita will fill the rest
-    
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/'):
 
         self.datadir=datadir
@@ -170,19 +180,14 @@ class simulation:
                     # popt, pcov are read from the file
 
                    
-                self.linefitdict[str(lines0[j])+'_flux'].append(popt[0])
-                self.linefitdict[str(lines0[j])+'_flux_err'].append(np.sqrt(pcov[0, 0]))
-                self.linefitdict[str(lines0[j])+'_lambda'].append(popt[1])
-                self.linefitdict[str(lines0[j])+'_lambda_err'].append(np.sqrt(pcov[1, 1]))
-                self.linefitdict[str(lines0[j])+'_sigma'].append(popt[2])
-                self.linefitdict[str(lines0[j])+'_sigma_err'].append(np.sqrt(pcov[2, 2]))
+                    self.linefitdict[str(lines0[j])+'_flux'].append(popt[0])
+                    self.linefitdict[str(lines0[j])+'_flux_err'].append(np.sqrt(pcov[0, 0]))
+                    self.linefitdict[str(lines0[j])+'_lambda'].append(popt[1])
+                    self.linefitdict[str(lines0[j])+'_lambda_err'].append(np.sqrt(pcov[1, 1]))
+                    self.linefitdict[str(lines0[j])+'_sigma'].append(popt[2])
+                    self.linefitdict[str(lines0[j])+'_sigma_err'].append(np.sqrt(pcov[2, 2]))
             
-                #print("fiber: ", i)
-                #print(popt)
-                #print(np.sqrt(pcov[0, 0]), np.sqrt(pcov[1,1]), np.sqrt(pcov[2, 2]), "\n")
-                #
-                #for key, value in output_dict.items():
-                   # print(key, ' \n ', value)
+                
           
     
         if not loadfile:
@@ -222,7 +227,7 @@ class simulation:
 
         '''
 
-        self.lineid = lines0.astype(str)
+        #self.lineid = lines0.astype(str)
 
         if (self.nfib is None):
             RuntimeWarning('Undefined number of fibers. Probably you have not run fitlines yet', RuntimeWarning)
@@ -236,7 +241,27 @@ class simulation:
         S3=pn.Atom('S',3)
         diags=pn.Diagnostics()
 
+        # TO2 temperature diagnostic
+        ne=100
+        TO2=np.zeros((self.nfib, niter))
+        for i in range (niter):
+            f3726=self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
+            f3729=self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
+            f7319=self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
+            f7330=self.linefitdict['7330_flux']+np.random.randn(self.nfib)*self.linefitdict['7330_flux_err']
+            TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7319+f7330), den=ne, wave1=3727, wave2=7325)
+        self.TeO2 = np.nanmean(TO2, axis=1)
+        self.TeO2err = np.nanstd(TO2, axis=1)
 
+        # TO3 temperature diagnostic
+        ne=100
+        TO3=np.zeros((self.nfib, niter))
+        for i in range (niter):
+            f4363=self.linefitdict['4363_flux']+np.random.randn(self.nfib)*self.linefitdict['4363_flux_err']
+            f5007=self.linefitdict['5007_flux']+np.random.randn(self.nfib)*self.linefitdict['5007_flux_err']
+            TO3[:,i]=O3.getTemDen((f4363)/(f5007), den=ne, wave1=4363, wave2=5007)
+        self.TeO3 = np.nanmean(TO3, axis=1)
+        self.TeO3err = np.nanstd(TO3, axis=1)
 
         # TN2 temperature diagnostic
         ne=100
@@ -249,7 +274,31 @@ class simulation:
         self.TeN2err = np.nanstd(TN2, axis=1)
 
 
+        # TS2 temperature diagnostic
+        ne=100
+        TS2=np.zeros((self.nfib, niter))
+        for i in range (niter):
+            f4069=self.linefitdict['4069_flux']+np.random.randn(self.nfib)*self.linefitdict['4069_flux_err']
+            f4076=self.linefitdict['4076_flux']+np.random.randn(self.nfib)*self.linefitdict['4076_flux_err']
+            f6716=self.linefitdict['6716_flux']+np.random.randn(self.nfib)*self.linefitdict['6716_flux_err']
+            f6731=self.linefitdict['6731_flux']+np.random.randn(self.nfib)*self.linefitdict['6731_flux_err']
+            TS2[:,i]=S2.getTemDen((f4069+f4076)/(f6716+f6731), den=ne, wave1=4072, wave2=6720)
+        self.TeS2 = np.nanmean(TS2, axis=1)
+        self.TeS2err = np.nanstd(TS2, axis=1)
 
+
+        # TS3 temperature diagnostic
+        ne=100
+        TN2=np.zeros((self.nfib, niter))
+        for i in range (niter):
+            f5755=self.linefitdict['5755_flux']+np.random.randn(self.nfib)*self.linefitdict['5755_flux_err']
+            f6584=self.linefitdict['6584_flux']+np.random.randn(self.nfib)*self.linefitdict['6584_flux_err']
+            TN2[:,i]=N2.getTemDen(f5755/f6584, den=ne, wave1=5755, wave2=6584)
+        self.TeN2 = np.nanmean(TN2, axis=1)
+        self.TeN2err = np.nanstd(TN2, axis=1)
+
+
+        
 
 
 
