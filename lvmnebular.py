@@ -48,15 +48,16 @@ class simulation:
         self.err = None
         self.fiberdata = None
         self.nfib=None
+        self.nfibbin=None
         self.linefitdict=None
+
+
 
         
         self.ra=None
         self.dec=None
         self.lineid=None
-        self.lineflux=None
-        self.linecenter=None
-        self.linewidth=None
+        
 
         self.simfile = None
         self.linefitfile= None
@@ -64,6 +65,10 @@ class simulation:
 
         self.newvalue=None
 
+        self.TeN2=None
+        self.TeN2err=None
+
+        # Amrita will fill the rest
     
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/'):
 
@@ -85,7 +90,7 @@ class simulation:
         self.nfib=len(self.fiberdata)
 
     
-    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False):
+    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=False):
         '''
         This function fits each line in self.lineid in the spectrum of each spaxel and measures fluxes, linewidthsm and line centers
 
@@ -112,6 +117,8 @@ class simulation:
         if (not os.path.isdir(plotdir)):
             os.mkdir(plotdir)
 
+
+        # pending to write logic to deal with bin
         wave = self.wave
         fiberid = self.fiberdata
         flux = self.flux
@@ -133,25 +140,35 @@ class simulation:
             self.linefitdict[self.lineid[i]+'_sigma_err']=[]
             
 
-        for i in range(self.nfib):
+        auxnfib=self.nfib
+        if bin:
+                auxnfib=self.nfibbin
+
+        for i in range(auxnfib):
             mask = self.fiberdata['id'] == i
-            spectrum = flux[mask].flatten()  # select only fiber n. 200
-            error = err[mask].flatten()
             self.linefitdict['fiber_id'].append(fiberid[mask]['id'])
             self.linefitdict['delta_ra'].append(fiberid[mask]['x'].flatten())
             self.linefitdict['delta_dec'].append(fiberid[mask]['y'].flatten())       
     
             for j,line in enumerate(lines):
-                print("Fitting Line:", line)
-                plot=False
-                plotout='junk'
-                list=lines0
-            
-                if lines0[j] in list:
-                    plot=False               
-                    plotout=plotdir+str(fiberid['id'][i])+'_'+str(lines0[j])
-                popt, pcov = fit_gauss(wave, flux[i,:], err[i,:], line, plot=plot, plotout=plotout)
-               
+
+
+                if not loadfile:
+
+                    print("Fitting Line:", line)
+                    plot=False
+                    plotout='junk'
+                    list=lines0
+
+                    if lines0[j] in list:
+                        plot=False               
+                        plotout=plotdir+str(fiberid['id'][i])+'_'+str(lines0[j])
+                    popt, pcov = fit_gauss(wave, flux[i,:], err[i,:], line, plot=plot, plotout=plotout)
+
+                if loadfile:
+                    # check if self.linefitfile exists and raise exception if not
+                    # popt, pcov are read from the file
+
                    
                 self.linefitdict[str(lines0[j])+'_flux'].append(popt[0])
                 self.linefitdict[str(lines0[j])+'_flux_err'].append(np.sqrt(pcov[0, 0]))
@@ -168,25 +185,41 @@ class simulation:
                    # print(key, ' \n ', value)
           
     
-        t=Table(self.linefitdict, names=self.linefitdict.keys())
-        t.write(self.linefitfile, overwrite=True)        
+        if not loadfile:
+            t=Table(self.linefitdict, names=self.linefitdict.keys())
+            t.write(self.linefitfile, overwrite=True)        
 
-    def pyneb(self, niter=10, lines0=np.array([4363, 5007, 5755, 6583]), bin=False, pertsim=False):
+
+
+
+
+    def runpyneb(self, niter=10, bin=False, pertsim=False):
 
         '''
-        This function will use the line fluxes to calculate the Te, Ne radial temp variation, etc. for each line in self.lineid 
-        and then calculate and store error on the Te nad Ne running MC.
+        This function will use the line fluxes to calculate the Te, ne and errors in Te nad ne running a MonteCarlo.
+        The function uses the following diagnostics:
+
         
+        TeO2: Te from "[OII] 3727+/7325+"  ; ne=100 cm-3
+        TeO3: Te from "[OIII] 4363/5007"   ; ne=100 cm-3
+        TeN2: Te from "[NII] 5755/6584"    ; ne=100 cm-3
+        TeS2: Te from "[SII] 4072+/6720+"  ; ne=100 cm-3
+        TeS3: Te from "[SIII] 6312/9069"   ; ne=100 cm-3
+
+        neO2: ne from 3726/3729 ; Te=TeN2
+        neS2: ne from 6717/6731 ; Te=TeN2
+
         Input:
 
-        bin: if True work on binned simulation spectra, if False (default) run pyneb and MC on native simulation spectra (boolean)
-        pertsim: if True work on perturbed simulation spectra, if False (default) run pyneb and MC on native simulation spectra (boolean)
-        niter: number of iterations to run MC in order to get errors on temperature, density, etc., default is niter=10 (integer)
-        lines0: rest-frame wavelength of emission lines required to compute lineflux. 
-        Default is just NII and OIII auroral and strong lines(numpy array of floats)
-
+        niter: number of MC realizations used to get errors on temperature and density, default is niter=10 (int)
+        bin: if True work on binned spaxels line fluxes, if False (default) work on native spaxels line fluxes (bool)
+        pertsim: if True work on perturbed simulation spaxels line fluxes, if False (default) work on native spaxels line fluxes (bool)
+        
         Output:
-        Run pyneb package on emission line ratios to measure temperature of relevant ionic species.
+
+        self.TeO2: electron temperature from O2 diagnosti
+        self.TeO3.....
+
         '''
 
         self.lineid = lines0.astype(str)
@@ -194,114 +227,33 @@ class simulation:
         if (self.nfib is None):
             RuntimeWarning('Undefined number of fibers. Probably you have not run fitlines yet', RuntimeWarning)
 
-        table = Table.read(self.linefitfile)
-        #print(table)
-
-        T_out = np.zeros((self.nfib, niter))  # output list of Temperature
-        N_out = np.zeros((self.nfib, niter))  # output list of Density
-
-        for j in lines0:
-            for i in range(niter):
-                newvalue_name = f'newvalue_{self.lineid[j]}'  # creating a variable name for the ratio
-                newvalues = new_measurements(table[str(self.lineid[j]) + '_flux']), table[str(self.lineid[j]) + '_flux_err']
-
-                if newvalue_name in self.ratios:
-                    self.newvalue[newvalue_name][j].append(newvalues) # appending new measurements to existing list for this line ID
-
-                else:
-                    self.newvalue[newvalue_name] = {j: [newvalues]} # creating a new dictionary entry for this ratio name and line ID
-
-        print(self.newvalue[newvalue_name][j])   
-        
-    
-    '''
-    def pyneb(self, niter = 10, lines0= np.array([4363, 5007, 5755, 6583]), bin=False, pertsim=False):
-    
-        This function will use the line fluxes to calculate the Te, Ne radial temp variation, etc. for each line in self.lineid 
-        and then calculate and store error on the Te nad Ne running MC.
-        
-        Input:
-
-        bin: if True work on binned simulation spectra, if False (default) run pyneb and MC on native simulation spectra (boolean)
-        pertsim: if True work on perturbed simulation spectra, if False (default) run pyneb and MC on native simulation spectra (boolean)
-        niter: number of iterations to run MC in order to get errors on temperature, density, etc., default is niter=10 (integer)
-        lines0: rest-frame wavelength of emission lines required to compute lineflux. 
-        Default is just NII and OIII auroral and strong lines(numpy array of floats)
-
-        Output:
-        Run pyneb package on emission line ratios to measure temperature of relevant ionic species.
-
-        
-        self.lineid=lines0.astype(str)
-        if (self.nfib==None):
-            RuntimeWarning('Undefined number of fibers. Probably you have not run fitlines yet')
-    
-        table=Table.read(self.linefitfile)
-        T_out = np.zeros((self.nfib,niter))  # output list of Temperature
-        N_out = np.zeros((self.nfib,niter))  # output list of Density
-
-############################ method 1 ######################################################
-          for j in lines0:
-            for i in range(niter):
-                ratio_name = f'ratio_{lines0[j]}'  # a variable name for the ratio
-                ratio_measurements = new_measurements(table[str(self.lineid[j]) + '_flux']), table[str(self.lineid[j]) + '_flux_err']
-            if ratio_name in self.ratios:
-                self.ratios[ratio_name].append(ratio_measurements) # appending new measurements to existing list
-
-            else:
-                self.ratios[ratio_name] = [ratio_measurements] # create a new list for this ratio name
-
-        print(self.ratios[ratio_name])
-
-############################ method 2 ######################################################        
-        for j in lines0:
-            for i in range(niter):
-                self.ratio_ + str(j) = new_measurements(table[str(self.lineid[j])+'_flux']), table[str(self.lineid[j])+'_flux_err']
-        print(self.ratio[j])
+        # Load PyNeb packages
+        atoms=pn.getAtomDict()
+        O3=pn.Atom('O',3)
+        S2=pn.Atom('S',2)
+        N2=pn.Atom('N',2)
+        O2=pn.Atom('O',2)
+        S3=pn.Atom('S',3)
+        diags=pn.Diagnostics()
 
 
-            ############################### Example #########################################
-                tmp_6584 = new_measurements(table['6584_flux'], table['6584_flux_err']   
-        
-                tmp_O2=tmp_3726/tmp_3729
-                temp_TN2=N2.getTemDen(tmp_5755/tmp_6584, den=1e2, wave1=5755, wave2=6584)
-                T_out_N2[:,i]=temp_TN2
-                Den_O2=O2.getTemDen(tmp_3726/tmp_3729, tem=TN2, wave1=3726, wave2=3729)
-                N_out_O2[:,i]=Den_O2
 
-                temp_TS3=S3.getTemDen(tmp_6312/tmp_9069, den=1e2, wave1=6312, wave2=9069)
-                T_out_S3[:,i]=temp_TS3
-    
-    TS3_mean=np.nanmean(T_out_S3, axis=1)
-    TS3_std=np.nanstd(T_out_S3, axis=1)
-
-    TN2_mean=np.nanmean(T_out_N2, axis=1)
-    TN2_std=np.nanstd(T_out_N2, axis=1)
-    
-    NO2_mean=np.nanmean(N_out_O2, axis=1)
-    NO2_std=np.nanstd(N_out_O2, axis=1)
-    
-    table['Temp_mean_N2']=TN2_mean
-    table['Temp_std_N2']=TN2_std
-    table['Den_mean_O2']=NO2_mean
-    table['Den_std_O2']=NO2_std
-    table['T[NII]_snr']=TN2_mean/TN2_std
-
-    table['Temp_mean_S3']=TS3_mean
-    table['Temp_std_S3']=TS3_std
-    table['T[SIII]_snr']=TS3_mean/TS3_std
-    
-    table.write('newdata_Temp_Den.fits', overwrite=True)
-    
-    x= table['delta_ra']
-    y= table['delta_dec']
+        # TN2 temperature diagnostic
+        ne=100
+        TN2=np.zeros((self.nfib, niter))
+        for i in range (niter):
+            f5755=self.linefitdict['5755_flux']+np.random.randn(self.nfib)*self.linefitdict['5755_flux_err']
+            f6584=self.linefitdict['6584_flux']+np.random.randn(self.nfib)*self.linefitdict['6584_flux_err']
+            TN2[:,i]=N2.getTemDen(f5755/f6584, den=ne, wave1=5755, wave2=6584)
+        self.TeN2 = np.nanmean(TN2, axis=1)
+        self.TeN2err = np.nanstd(TN2, axis=1)
 
 
-    
-        for i in range(niter):
-            tmp_linecenter = new_measurements(table[self.linecenter_flux], table[self.linecenter_flux_err])
-        
-    '''
+
+
+
+
+
     def bin(self, rbinmax, drbin, pertsim=False):
         '''
         This function will a 3d array which will provide us the binned line flux for each self.lineid in each spaxel.
