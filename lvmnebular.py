@@ -137,33 +137,38 @@ class simulation:
         c=299792.458 # speed of light in km/s
         lines=lines0*(1+sys_vel /c)
 
-        self.linefitdict= {'fiber_id': [], 
+        if loadfile:
+            ########### read the file################# t=
+            self.linefitdict=t
+
+        else:
+            
+            self.linefitdict= {'fiber_id': [], 
                     'delta_ra':[], 
                     'delta_dec':[]}
         
-        for i in range(len(self.lineid)):
-            self.linefitdict[self.lineid[i]+'_flux']=[]
-            self.linefitdict[self.lineid[i]+'_flux_err']=[]
-            self.linefitdict[self.lineid[i]+'_lambda']=[]
-            self.linefitdict[self.lineid[i]+'_lambda_err']=[]
-            self.linefitdict[self.lineid[i]+'_sigma']=[]
-            self.linefitdict[self.lineid[i]+'_sigma_err']=[]
+            for i in range(len(self.lineid)):
+                self.linefitdict[self.lineid[i]+'_flux']=[]
+                self.linefitdict[self.lineid[i]+'_flux_err']=[]
+                self.linefitdict[self.lineid[i]+'_lambda']=[]
+                self.linefitdict[self.lineid[i]+'_lambda_err']=[]
+                self.linefitdict[self.lineid[i]+'_sigma']=[]
+                self.linefitdict[self.lineid[i]+'_sigma_err']=[]
             
 
-        auxnfib=self.nfib
-        if bin:
+            auxnfib=self.nfib
+            if bin:
+
                 auxnfib=self.nfibbin
 
-        for i in range(auxnfib):
-            mask = self.fiberdata['id'] == i
-            self.linefitdict['fiber_id'].append(fiberid[mask]['id'])
-            self.linefitdict['delta_ra'].append(fiberid[mask]['x'].flatten())
-            self.linefitdict['delta_dec'].append(fiberid[mask]['y'].flatten())       
+            for i in range(auxnfib):
+                mask = self.fiberdata['id'] == i
+                self.linefitdict['fiber_id'].append(fiberid[mask]['id'])
+                self.linefitdict['delta_ra'].append(fiberid[mask]['x'].flatten())
+                self.linefitdict['delta_dec'].append(fiberid[mask]['y'].flatten())       
     
-            for j,line in enumerate(lines):
+                for j,line in enumerate(lines):
 
-
-                if not loadfile:
 
                     print("Fitting Line:", line)
                     plot=False
@@ -173,11 +178,7 @@ class simulation:
                     if lines0[j] in list:
                         plot=False               
                         plotout=plotdir+str(fiberid['id'][i])+'_'+str(lines0[j])
-                    popt, pcov = fit_gauss(wave, flux[i,:], err[i,:], line, plot=plot, plotout=plotout)
-
-                if loadfile:
-                    # check if self.linefitfile exists and raise exception if not
-                    # popt, pcov are read from the file
+                    popt, pcov = fit_gauss(wave, flux[i,:], err[i,:], line, plot=plot, plotout=plotout)      
 
                    
                     self.linefitdict[str(lines0[j])+'_flux'].append(popt[0])
@@ -186,13 +187,14 @@ class simulation:
                     self.linefitdict[str(lines0[j])+'_lambda_err'].append(np.sqrt(pcov[1, 1]))
                     self.linefitdict[str(lines0[j])+'_sigma'].append(popt[2])
                     self.linefitdict[str(lines0[j])+'_sigma_err'].append(np.sqrt(pcov[2, 2]))
-            
+
+            self.linefitdict=Table(self.linefitdict)
+            self.linefitdict.write(self.linefitfile, overwrite=True) 
                 
           
     
-        if not loadfile:
-            t=Table(self.linefitdict, names=self.linefitdict.keys())
-            t.write(self.linefitfile, overwrite=True)        
+        
+                   
 
 
 
@@ -289,7 +291,7 @@ class simulation:
 
         # TS3 temperature diagnostic
         ne=100
-        TN2=np.zeros((self.nfib, niter))
+        TS3=np.zeros((self.nfib, niter))
         for i in range (niter):
             f5755=self.linefitdict['5755_flux']+np.random.randn(self.nfib)*self.linefitdict['5755_flux_err']
             f6584=self.linefitdict['6584_flux']+np.random.randn(self.nfib)*self.linefitdict['6584_flux_err']
