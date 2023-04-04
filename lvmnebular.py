@@ -138,8 +138,14 @@ class simulation:
         lines=lines0*(1+sys_vel /c)
 
         if loadfile:
-            ########### read the file################# t=
+            
+            tabledata=fits.open(self.linefitfile)
+            print(tabledata.info())
+            t=Table.read(tabledata)
+        
+            print(t)
             self.linefitdict=t
+            #print(self.linefitdict)
 
         else:
             
@@ -189,12 +195,7 @@ class simulation:
                     self.linefitdict[str(lines0[j])+'_sigma_err'].append(np.sqrt(pcov[2, 2]))
 
             self.linefitdict=Table(self.linefitdict)
-            self.linefitdict.write(self.linefitfile, overwrite=True) 
-                
-          
-    
-        
-                   
+            self.linefitdict.write(self.linefitfile, overwrite=True)                  
 
 
 
@@ -293,16 +294,12 @@ class simulation:
         ne=100
         TS3=np.zeros((self.nfib, niter))
         for i in range (niter):
-            f5755=self.linefitdict['5755_flux']+np.random.randn(self.nfib)*self.linefitdict['5755_flux_err']
-            f6584=self.linefitdict['6584_flux']+np.random.randn(self.nfib)*self.linefitdict['6584_flux_err']
-            TN2[:,i]=N2.getTemDen(f5755/f6584, den=ne, wave1=5755, wave2=6584)
-        self.TeN2 = np.nanmean(TN2, axis=1)
-        self.TeN2err = np.nanstd(TN2, axis=1)
-
-
-        
-
-
+            f6312=self.linefitdict['6312_flux']+np.random.randn(self.nfib)*self.linefitdict['6312_flux_err']
+            f9069=self.linefitdict['9069_flux']+np.random.randn(self.nfib)*self.linefitdict['9069_flux_err']
+            TN2[:,i]=S3.getTemDen(f6312/f9069, den=ne, wave1=6312, wave2=9069)
+        self.TeS3 = np.nanmean(TS3, axis=1)
+        self.TeS3err = np.nanstd(TS3, axis=1)
+             
 
 
     def bin(self, rbinmax, drbin, pertsim=False):
