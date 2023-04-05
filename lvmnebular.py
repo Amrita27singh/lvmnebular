@@ -363,6 +363,7 @@ class simulation:
 
         self.neO2 = np.nanmean(NO2, axis=1)
         self.neO2err = np.nanstd(NO2, axis=1)
+        print(self.neO2)
 
         # NS2 electron density diagnostic
         NS2=np.zeros((self.nfib, niter))
@@ -374,6 +375,7 @@ class simulation:
 
         self.neS2 = np.nanmean(NS2, axis=1)
         self.neS2err = np.nanstd(NS2, axis=1)
+        print(self.neS2)
 
 
 
