@@ -273,7 +273,11 @@ class simulation:
             TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7319+f7330), den=ne, wave1=3727, wave2=7325)
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
-        print(self.TeO2)
+        '''
+        table['Temp_mean_O2']=self.TeO2
+        table['Temp_std_O2']=self.TeO2err
+        '''
+        
 
         # TO3 temperature diagnostic
         ne=100
@@ -285,6 +289,11 @@ class simulation:
         self.TeO3 = np.nanmean(TO3, axis=1)
         self.TeO3err = np.nanstd(TO3, axis=1)
 
+        '''
+        table['Temp_mean_O3']=self.TeO3
+        table['Temp_std_O3']=self.TeO3err
+        '''
+
         # TN2 temperature diagnostic
         ne=100
         TN2=np.zeros((self.nfib, niter))
@@ -295,6 +304,10 @@ class simulation:
         self.TeN2 = np.nanmean(TN2, axis=1)
         self.TeN2err = np.nanstd(TN2, axis=1)
 
+        '''
+        table['Temp_mean_N2']=self.TeN2
+        table['Temp_std_N2']=self.TeN2err
+        '''
 
         # TS2 temperature diagnostic
         ne=100
@@ -302,12 +315,16 @@ class simulation:
         for i in range (niter):
             f4069=self.linefitdict['4069_flux']+np.random.randn(self.nfib)*self.linefitdict['4069_flux_err']
             f4076=self.linefitdict['4076_flux']+np.random.randn(self.nfib)*self.linefitdict['4076_flux_err']
-            f6716=self.linefitdict['6716_flux']+np.random.randn(self.nfib)*self.linefitdict['6716_flux_err']
+            f6717=self.linefitdict['6716_flux']+np.random.randn(self.nfib)*self.linefitdict['6716_flux_err']
             f6731=self.linefitdict['6731_flux']+np.random.randn(self.nfib)*self.linefitdict['6731_flux_err']
-            TS2[:,i]=S2.getTemDen((f4069+f4076)/(f6716+f6731), den=ne, wave1=4072, wave2=6720)
+            TS2[:,i]=S2.getTemDen((f4069+f4076)/(f6717+f6731), den=ne, wave1=4072, wave2=6720)
         self.TeS2 = np.nanmean(TS2, axis=1)
         self.TeS2err = np.nanstd(TS2, axis=1)
 
+        '''
+        table['Temp_mean_S2']=self.TeS2
+        table['Temp_std_S2']=self.TeS2err
+        '''
 
         # TS3 temperature diagnostic
         ne=100
@@ -319,6 +336,30 @@ class simulation:
         self.TeS3 = np.nanmean(TS3, axis=1)
         self.TeS3err = np.nanstd(TS3, axis=1)
              
+        '''
+        table['Temp_mean_S3']=self.TeS3
+        table['Temp_std_S3']=self.TeS3err
+        '''
+
+        # NO2 electron density diagnostic
+        NO2=np.zeros((self.nfib, niter))
+        for i in range (niter):
+            f3726=self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
+            f3729=self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
+            NO2[:,i]=O2.getTemDen(f3726/f3729, tem=TN2, wave1=3726, wave2=3729)
+        self.neO2 = np.nanmean(NO2, axis=1)
+        self.neO2err = np.nanstd(NO2, axis=1)
+
+        # NS2 electron density diagnostic
+
+        NS2=np.zeros((self.nfib, niter))
+        for i in range (niter):
+            f6717=self.linefitdict['6716_flux']+np.random.randn(self.nfib)*self.linefitdict['6716_flux_err']
+            f6731=self.linefitdict['6731_flux']+np.random.randn(self.nfib)*self.linefitdict['6731_flux_err']
+            NS2[:,i]=S2.getTemDen(f6717/f6731, tem=TN2, wave1=6717, wave2=6731)
+        self.neS2 = np.nanmean(NS2, axis=1)
+        self.neS2err = np.nanstd(NS2, axis=1)
+
 
 
     def bin(self, rbinmax, drbin, pertsim=False):
