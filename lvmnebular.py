@@ -119,7 +119,7 @@ class simulation:
         
         '''
         self.lineid=lines0.astype(str)
-        #print('Fitting Emmission Lines:', self.lineid)
+        print('Fitting Emmission Lines:', self.lineid)
         if (self.nfib == None):
             raise Exception('Simulation has not been loaded. Run loadsim first.')
         
@@ -175,7 +175,7 @@ class simulation:
                 for j,line in enumerate(lines):
 
 
-                    #print("Fitting Line:", line)
+                    print("Fitting Line:", line)
                     plot=False
                     plotout='junk'
                     list=lines0
@@ -195,7 +195,7 @@ class simulation:
 
             self.linefitdict=Table(self.linefitdict)
             self.linefitdict.write(self.linefitfile, overwrite=True)
-            #print(self.linefitdict)                  
+                              
 
 
 
@@ -262,17 +262,24 @@ class simulation:
         S3=pn.Atom('S',3)
         diags=pn.Diagnostics()
 
+        ############################################################## Electron Temperature diagnostics ##############################################################
+
+
         # TO2 temperature diagnostic
         ne=100
         TO2=np.zeros((self.nfib, niter))
         for i in range (niter):
+
             f3726=self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
             f3729=self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
             f7319=self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
             f7330=self.linefitdict['7330_flux']+np.random.randn(self.nfib)*self.linefitdict['7330_flux_err']
             TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7319+f7330), den=ne, wave1=3727, wave2=7325)
+
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
+        print(self.TeO2)
+
         '''
         table['Temp_mean_O2']=self.TeO2
         table['Temp_std_O2']=self.TeO2err
@@ -283,9 +290,11 @@ class simulation:
         ne=100
         TO3=np.zeros((self.nfib, niter))
         for i in range (niter):
+
             f4363=self.linefitdict['4363_flux']+np.random.randn(self.nfib)*self.linefitdict['4363_flux_err']
             f5007=self.linefitdict['5007_flux']+np.random.randn(self.nfib)*self.linefitdict['5007_flux_err']
             TO3[:,i]=O3.getTemDen((f4363)/(f5007), den=ne, wave1=4363, wave2=5007)
+
         self.TeO3 = np.nanmean(TO3, axis=1)
         self.TeO3err = np.nanstd(TO3, axis=1)
 
@@ -298,9 +307,11 @@ class simulation:
         ne=100
         TN2=np.zeros((self.nfib, niter))
         for i in range (niter):
+
             f5755=self.linefitdict['5755_flux']+np.random.randn(self.nfib)*self.linefitdict['5755_flux_err']
             f6584=self.linefitdict['6584_flux']+np.random.randn(self.nfib)*self.linefitdict['6584_flux_err']
             TN2[:,i]=N2.getTemDen(f5755/f6584, den=ne, wave1=5755, wave2=6584)
+
         self.TeN2 = np.nanmean(TN2, axis=1)
         self.TeN2err = np.nanstd(TN2, axis=1)
 
@@ -313,11 +324,13 @@ class simulation:
         ne=100
         TS2=np.zeros((self.nfib, niter))
         for i in range (niter):
+
             f4069=self.linefitdict['4069_flux']+np.random.randn(self.nfib)*self.linefitdict['4069_flux_err']
             f4076=self.linefitdict['4076_flux']+np.random.randn(self.nfib)*self.linefitdict['4076_flux_err']
-            f6717=self.linefitdict['6716_flux']+np.random.randn(self.nfib)*self.linefitdict['6716_flux_err']
+            f6717=self.linefitdict['6717_flux']+np.random.randn(self.nfib)*self.linefitdict['6717_flux_err']
             f6731=self.linefitdict['6731_flux']+np.random.randn(self.nfib)*self.linefitdict['6731_flux_err']
             TS2[:,i]=S2.getTemDen((f4069+f4076)/(f6717+f6731), den=ne, wave1=4072, wave2=6720)
+
         self.TeS2 = np.nanmean(TS2, axis=1)
         self.TeS2err = np.nanstd(TS2, axis=1)
 
@@ -330,9 +343,11 @@ class simulation:
         ne=100
         TS3=np.zeros((self.nfib, niter))
         for i in range (niter):
+
             f6312=self.linefitdict['6312_flux']+np.random.randn(self.nfib)*self.linefitdict['6312_flux_err']
             f9069=self.linefitdict['9069_flux']+np.random.randn(self.nfib)*self.linefitdict['9069_flux_err']
             TN2[:,i]=S3.getTemDen(f6312/f9069, den=ne, wave1=6312, wave2=9069)
+
         self.TeS3 = np.nanmean(TS3, axis=1)
         self.TeS3err = np.nanstd(TS3, axis=1)
              
@@ -340,23 +355,27 @@ class simulation:
         table['Temp_mean_S3']=self.TeS3
         table['Temp_std_S3']=self.TeS3err
         '''
+    ############################################################## Electron density diagnostics ##############################################################
 
         # NO2 electron density diagnostic
         NO2=np.zeros((self.nfib, niter))
         for i in range (niter):
+
             f3726=self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
             f3729=self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
-            NO2[:,i]=O2.getTemDen(f3726/f3729, tem=TN2, wave1=3726, wave2=3729)
+            NO2[:,i]=O2.getTemDen(f3726/f3729, tem=TN2[:,i], wave1=3726, wave2=3729)
+
         self.neO2 = np.nanmean(NO2, axis=1)
         self.neO2err = np.nanstd(NO2, axis=1)
 
         # NS2 electron density diagnostic
-
         NS2=np.zeros((self.nfib, niter))
         for i in range (niter):
-            f6717=self.linefitdict['6716_flux']+np.random.randn(self.nfib)*self.linefitdict['6716_flux_err']
+
+            f6717=self.linefitdict['6717_flux']+np.random.randn(self.nfib)*self.linefitdict['6717_flux_err']
             f6731=self.linefitdict['6731_flux']+np.random.randn(self.nfib)*self.linefitdict['6731_flux_err']
-            NS2[:,i]=S2.getTemDen(f6717/f6731, tem=TN2, wave1=6717, wave2=6731)
+            NS2[:,i]=S2.getTemDen(f6717/f6731, tem=TN2[:,i], wave1=6731, wave2=6717)
+
         self.neS2 = np.nanmean(NS2, axis=1)
         self.neS2err = np.nanstd(NS2, axis=1)
 
@@ -374,7 +393,7 @@ class simulation:
         Binned spectra for lineflux in each spaxel
         
         '''
-                
+
         radius = np.sqrt(self.fiberdata['x']**2 + self.fiberdata['y']**2)
         bins = np.arange(drbin/2, rbinmax-drbin/2, drbin)
         nspax=np.zeros(len(bins))
@@ -444,9 +463,9 @@ class simulation:
 
 
 
-################################################ Functions used in above methods ###############################################################
+#################################################################################### Functions used in above methods #################################################################################################
 
-################################################ Functions used in fitlines method #############################################################
+################################################ Functions used in fitlines method ####################################################
 
 def gaussian(wave,flux,mean,sd):
     '''
@@ -640,6 +659,8 @@ def field_delta(k0, dk0, dim, npoints):
     new_field = np.real(ifftn(pspect_field))
     
     return new_field
+
+##################################################################################################################################################
 
 
 
