@@ -195,11 +195,7 @@ class simulation:
 
             self.linefitdict=Table(self.linefitdict)
             self.linefitdict.write(self.linefitfile, overwrite=True)
-                              
-
-
-
-
+                            
 
     def runpyneb(self, niter=4, bin=False, pertsim=False):
 
