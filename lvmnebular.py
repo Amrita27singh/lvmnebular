@@ -175,7 +175,7 @@ class simulation:
                 for j,line in enumerate(lines):
 
 
-                    print("Fitting Line:", line)
+                    #print("Fitting Line:", line)
                     plot=False
                     plotout='junk'
                     list=lines0
