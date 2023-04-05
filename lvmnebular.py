@@ -119,7 +119,7 @@ class simulation:
         
         '''
         self.lineid=lines0.astype(str)
-        print('Fitting Emmission Lines:', self.lineid)
+        #print('Fitting Emmission Lines:', self.lineid)
         if (self.nfib == None):
             raise Exception('Simulation has not been loaded. Run loadsim first.')
         
@@ -142,10 +142,7 @@ class simulation:
         if loadfile:
             
             tabledata=fits.open(self.linefitfile)
-            print(tabledata.info())
             t=Table.read(tabledata)
-        
-            print(t)
             self.linefitdict=t
             #print(self.linefitdict)
 
@@ -197,7 +194,8 @@ class simulation:
                     self.linefitdict[str(lines0[j])+'_sigma_err'].append(np.sqrt(pcov[2, 2]))
 
             self.linefitdict=Table(self.linefitdict)
-            self.linefitdict.write(self.linefitfile, overwrite=True)                  
+            self.linefitdict.write(self.linefitfile, overwrite=True)
+            #print(self.linefitdict)                  
 
 
 
