@@ -80,7 +80,7 @@ class simulation:
         self.neS2=None
         self.neS2err=None
 
-    def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/'):
+    def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/'):
 
         self.datadir=datadir
         self.simname=simname
@@ -102,7 +102,7 @@ class simulation:
         self.nfib=len(self.fiberdata)
 
     
-    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=False):
+    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=True):
         '''
         This function fits each line in self.lineid in the spectrum of each spaxel and measures fluxes, linewidthsm and line centers
 
@@ -169,7 +169,7 @@ class simulation:
 
                 auxnfib=self.nfibbin
 
-            for i in range(auxnfib):
+            for i in range(auxnfib):                           # put a limit on auxnfib to examine fittings (ex. auxnfib<5)
                 mask = self.fiberdata['id'] == i
                 self.linefitdict['fiber_id'].append(fiberid[mask]['id'])
                 self.linefitdict['delta_ra'].append(fiberid[mask]['x'].flatten())
@@ -203,7 +203,7 @@ class simulation:
 
 
 
-    def runpyneb(self, niter=10, bin=False, pertsim=False):
+    def runpyneb(self, niter=4, bin=False, pertsim=False):
 
         '''
         This function will use the line fluxes to calculate the Te, ne and errors in Te nad ne running a MonteCarlo.
@@ -227,8 +227,26 @@ class simulation:
         
         Output:
 
-        self.TeO2: electron temperature from O2 diagnosti
-        self.TeO3.....
+        self.TeO2: electron temperature from O2 diagnostic
+        self.TeO2err=error on electron temperature from O2 diagnostic
+
+        self.TeO3=electron temperature from O3 diagnostic
+        self.TeO3err=error on electron temperature from O3 diagnostic 
+
+        self.TeN2=electron temperature from N2 diagnostic
+        self.TeN2err=error on electron temperature from N2 diagnostic
+
+        self.TeS2=electron temperature from S2 diagnostic
+        self.TeS2err=error on electron temperature from S2 diagnostic
+
+        self.TeS3=electron temperature from S3 diagnostic
+        self.TeS3err=error on electron temperature from S3 diagnostic
+
+        self.neO2=electron density from O2 diagnostic 
+        self.neO2err=error on electron density from O2 diagnostic
+
+        self.neS2=electron density from S2 diagnostic 
+        self.neS2err=error on electron density from OS2 diagnostic
 
         '''
 
@@ -257,6 +275,7 @@ class simulation:
             TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7319+f7330), den=ne, wave1=3727, wave2=7325)
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
+        print(self.TeO2)
 
         # TO3 temperature diagnostic
         ne=100
@@ -440,7 +459,7 @@ def error_func(wave, gaussian, popt, pcov, e=1e-7):
     sigma=np.sqrt(var)
     return sigma
 
-def fit_gauss(wave, spectrum, error, lwave, dwave=4, plot=False, plotout='linefit'):
+def fit_gauss(wave, spectrum, error, lwave, dwave=4, plot=True, plotout='linefit'):
     '''
     This function produce gaussion fit to all emission line in lines.
 
