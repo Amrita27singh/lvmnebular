@@ -121,7 +121,7 @@ if __name__ == '__main__':
         
     sys_vel=20
     c=299792.458 
-    lines0= np.array([9069, 6731, 6717, 6584, 6563, 6548, 6312, 5755, 5007, 4959, 4861, 4363, 4069, 3970, 3729, 3726])
+    lines0= np.array([9069, 7319, 7330, 6731, 6716, 6584, 6563, 6548, 6312, 5755, 5007, 4959, 4861, 4363, 4069, 4076, 3970, 3729, 3726])
     lines=lines0*(1+sys_vel /c)
 
     output_dict= {'fiber_id': [], 
@@ -144,6 +144,8 @@ if __name__ == '__main__':
                 '3729_flux':[], '3729_flux_err':[], '3729_lambda':[], '3729_lambda_err':[], '3729_sigma':[], '3729_sigma_err':[],
                 '3726_flux':[], '3726_flux_err':[], '3726_lambda':[], '3726_lambda_err':[], '3726_sigma':[], '3726_sigma_err':[]
                 }  
+
+                
 
     for i in range(len(fiberid)):
     #for i in [105, 106, 107]:

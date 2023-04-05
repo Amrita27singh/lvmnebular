@@ -16,6 +16,7 @@ from astropy.io import fits
 from astropy.visualization import ImageNormalize, PercentileInterval, AsinhStretch, LinearStretch
 from matplotlib import pyplot as plt
 import sys
+from astropy.table import Table
 
 tel = LVM160()
 spec = LinearSpectrograph()
@@ -31,6 +32,7 @@ distance = 16.0 * u.kpc
 sys_vel = 20 #* u.km / u.s
 turbulent_sigma = 15 #* u.km / u.s
 preserve_kinematics = False
+
 name='Bubble_v2_1e-10'
 unit_ra = u.degree
 unit_dec = u.degree
@@ -112,7 +114,7 @@ plt.xlim(3000,9000)
 plt.title(f"Fiber_id={fiber_id} (sky subtracted)", fontsize=16);
 plt.show()
 
-from astropy.table import Table
+
 #filename = '{name}/outputs/{name}_linear_full_input.fits'
 with fits.open(f"{name}/outputs/{name}_linear_full_input.fits") as hdu:
     # hdu.info()

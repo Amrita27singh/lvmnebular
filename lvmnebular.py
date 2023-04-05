@@ -88,8 +88,10 @@ class simulation:
         self.simfile = self.datadir+self.simname+'/outputs/'+self.simname+'_linear_full_'+str(int(self.exptime))+'_flux.fits'        
         #read simulator output in the right path correpsonding to "name"
         print("Loading simulation: "+self.datadir+self.simname+'\n')
+
         if ( not os.path.isdir(self.datadir+self.simname)):
             raise Exception("Simulation "+self.simname+" does not exist. Run run_simulation.py first")
+            
         with fits.open(self.simfile) as hdu:
             self.header = hdu[0].header
             self.wave = hdu['WAVE'].data ##1D array
