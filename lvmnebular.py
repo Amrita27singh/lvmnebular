@@ -36,7 +36,6 @@ class simulation:
         lineid: list of line IDs (list)
         lineflux: line fluxes of each line in each spaxel (2D numpy array)
 
-        Testing git
         '''
 
         self.datadir=None
