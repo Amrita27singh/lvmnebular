@@ -501,8 +501,8 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=4, plot=True, plotout='linefit
                     linewidth=3, label='error limits')
         
         ax.set_ylim(-0.4*spectrum[sel].max(),1.7*np.max([spectrum[sel].max(), (ym+3*sigma).max()]))
-        plt.ylabel(r'Flux (erg/cm^2 s \AA)')
-        plt.xlabel(r'wavelength(\AA)')
+        plt.ylabel("Flux, erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$")
+        plt.xlabel("wavelength, $\AA$")
 
         
         ax.legend()
