@@ -102,7 +102,7 @@ class simulation:
         self.nfib=len(self.fiberdata)
 
     
-    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=True, plot=True):
+    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=True, plot=False):
         '''
         This function fits each line in self.lineid in the spectrum of each spaxel and measures fluxes, linewidthsm and line centers
 
