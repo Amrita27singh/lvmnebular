@@ -277,8 +277,8 @@ class simulation:
         print(self.TeO2)
 
         '''
-        table['Temp_mean_O2']=self.TeO2
-        table['Temp_std_O2']=self.TeO2err
+        table_linediag['Temp_mean_O2']=self.TeO2
+        table_linediag['Temp_std_O2']=self.TeO2err
         '''
         
 
@@ -295,8 +295,8 @@ class simulation:
         self.TeO3err = np.nanstd(TO3, axis=1)
 
         '''
-        table['Temp_mean_O3']=self.TeO3
-        table['Temp_std_O3']=self.TeO3err
+        table_linediag['Temp_mean_O3']=self.TeO3
+        table_linediag['Temp_std_O3']=self.TeO3err
         '''
 
         # TN2 temperature diagnostic
@@ -312,8 +312,8 @@ class simulation:
         self.TeN2err = np.nanstd(TN2, axis=1)
 
         '''
-        table['Temp_mean_N2']=self.TeN2
-        table['Temp_std_N2']=self.TeN2err
+        table_linediag['Temp_mean_N2']=self.TeN2
+        table_linediag['Temp_std_N2']=self.TeN2err
         '''
 
         # TS2 temperature diagnostic
@@ -331,8 +331,8 @@ class simulation:
         self.TeS2err = np.nanstd(TS2, axis=1)
 
         '''
-        table['Temp_mean_S2']=self.TeS2
-        table['Temp_std_S2']=self.TeS2err
+        table_linediag['Temp_mean_S2']=self.TeS2
+        table_linediag['Temp_std_S2']=self.TeS2err
         '''
 
         # TS3 temperature diagnostic
@@ -348,8 +348,14 @@ class simulation:
         self.TeS3err = np.nanstd(TS3, axis=1)
              
         '''
-        table['Temp_mean_S3']=self.TeS3
-        table['Temp_std_S3']=self.TeS3err
+        self.linefitdict['Temp_mean_S3']=self.TeS3
+        self.linefitdict['Temp_std_S3']=self.TeS3err
+
+        table_linediag.write('diag_Temp_Den.fits', overwrite=True)
+    
+        table_linediag['delta_ra']=self.linefitdict['delta_ra']
+        table_linediag['delta_dec']=self.linefitdict['delta_dec']
+    
         '''
     ############################################################## Electron density diagnostics ##############################################################
 
