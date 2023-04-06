@@ -97,6 +97,7 @@ class simulation:
             self.flux = hdu['TARGET'].data ##2D array(no. of fibers, wave)
             self.err = hdu['ERR'].data
             self.fiberdata = Table.read(hdu['FIBERID'])
+            #print(self.fiberdata)
 
         self.nfib=len(self.fiberdata)
 
