@@ -62,7 +62,7 @@ class simulation:
         self.linefitfile= None
         self.dim=None
 
-        self.newvalue=None
+        self.plot=None
 
         self.TeO2=None
         self.TeO2err=None
@@ -102,7 +102,7 @@ class simulation:
         self.nfib=len(self.fiberdata)
 
     
-    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=True):
+    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=True, plot=True):
         '''
         This function fits each line in self.lineid in the spectrum of each spaxel and measures fluxes, linewidthsm and line centers
 
@@ -118,6 +118,7 @@ class simulation:
         Output:
         
         '''
+        self.plot=plot
         self.lineid=lines0.astype(str)
         print('Fitting Emmission Lines:', self.lineid)
         if (self.nfib == None):
@@ -141,8 +142,8 @@ class simulation:
 
         if loadfile:
             
-            tabledata=fits.open(self.linefitfile)
-            t=Table.read(tabledata)
+            
+            t=Table.read(self.linefitfile)
             self.linefitdict=t
             #print(self.linefitdict)
 
@@ -176,12 +177,12 @@ class simulation:
 
 
                     print("Fitting Line:", line)
-                    plot=False
+                    plot=self.plot
                     plotout='junk'
                     list=lines0
 
                     if lines0[j] in list:
-                        plot=False               
+                        plot=self.plot           
                         plotout=plotdir+str(fiberid['id'][i])+'_'+str(lines0[j])
                     popt, pcov = fit_gauss(wave, flux[i,:], err[i,:], line, plot=plot, plotout=plotout)      
 
