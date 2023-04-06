@@ -568,24 +568,6 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=4, plot=True, plotout='linefit
 ##################################################################################################################################################
 
 
-################################################### Function used to run MC simulations ##########################################################
-'''
-def new_measurements(value, errs):
-    
-    This function will be used to run monte carlo simulation on line fluxes.
-    Input:
-    value:line_flux
-    errs: line_fluxerr
-    
-    Output:
-    random values (1D numpy array)
-    
-    
-    delta = np.random.randn(len(errs)) * errs
-    new_values = np.max([value + delta, np.zeros(len(errs))], axis=0)
-    return new_values
-'''
-
 ################################################### Function used to bin spectra in simulations #######################################################
 
 def bin_spectra(rmin, rmax, radius, spectra, errors):
@@ -660,7 +642,23 @@ def field_delta(k0, dk0, dim, npoints):
 
 ##################################################################################################################################################
 
-
+################################################### Function used to run MC simulations ##########################################################
+'''
+def new_measurements(value, errs):
+    
+    This function will be used to run monte carlo simulation on line fluxes.
+    Input:
+    value:line_flux
+    errs: line_fluxerr
+    
+    Output:
+    random values (1D numpy array)
+    
+    
+    delta = np.random.randn(len(errs)) * errs
+    new_values = np.max([value + delta, np.zeros(len(errs))], axis=0)
+    return new_values
+'''
 
 
 
