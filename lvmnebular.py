@@ -177,14 +177,11 @@ class simulation:
 
 
                     print("Fitting Line:", line)
-                    plot=self.plot
-                    plotout='junk'
-                    list=lines0
+                    
 
-                    if lines0[j] in list:
-                        plot=self.plot           
+                    if lines0[j]:         
                         plotout=plotdir+str(fiberid['id'][i])+'_'+str(lines0[j])
-                    popt, pcov = fit_gauss(wave, flux[i,:], err[i,:], line, plot=plot, plotout=plotout)      
+                    popt, pcov = fit_gauss(wave, flux[i,:], err[i,:], line, plot=self.plot, plotout=plotout)      
 
                    
                     self.linefitdict[str(lines0[j])+'_flux'].append(popt[0])
@@ -262,7 +259,7 @@ class simulation:
         ############################################################## Electron Temperature diagnostics ##############################################################
 
 
-        # TO2 temperature diagnostic
+        # TO2 temperature diagnostic (eduardo suggested trying blending 7319, 7320, 7330 and 7331 lines)
         ne=100
         TO2=np.zeros((self.nfib, niter))
         for i in range (niter):
@@ -349,8 +346,8 @@ class simulation:
         self.TeS3err = np.nanstd(TS3, axis=1)
              
         '''
-        self.linefitdict['Temp_mean_S3']=self.TeS3
-        self.linefitdict['Temp_std_S3']=self.TeS3err
+        table_linediag['Temp_mean_S3']=self.TeS3
+        table_linediag['Temp_std_S3']=self.TeS3err
 
         table_linediag.write('diag_Temp_Den.fits', overwrite=True)
     
