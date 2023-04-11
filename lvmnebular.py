@@ -77,7 +77,6 @@ class simulation:
         self.neS2=None
         self.neS2err=None
 
-        self.TeN2snr=None
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/'):
 
@@ -240,7 +239,7 @@ class simulation:
 
         '''
 
-        #self.linefitdict=Table.read(self.linefitfile)
+        #self.lineid = lines0.astype(str)
 
         if (self.nfib is None):
             RuntimeWarning('Undefined number of fibers. Probably you have not run fitlines yet', RuntimeWarning)
@@ -252,8 +251,7 @@ class simulation:
         N2=pn.Atom('N',2)
         O2=pn.Atom('O',2)
         S3=pn.Atom('S',3)
-        diags=pn.Diagnostics()
-
+        #diags=pn.Diagnostics()   
 
         ############################################################## Electron Temperature diagnostics ##############################################################
 
@@ -271,13 +269,12 @@ class simulation:
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
-        #print(self.TeO2)
+        print(self.TeO2)
 
-        '''
+        
         self.linefitdict['Temp_mean_O2']=self.TeO2
         self.linefitdict['Temp_std_O2']=self.TeO2err
-        self.linefitdict['TeO2_snr']=self.TeO2/self.TeO2err
-        '''
+        
         
 
         # TO3 temperature diagnostic
@@ -291,13 +288,11 @@ class simulation:
 
         self.TeO3 = np.nanmean(TO3, axis=1)
         self.TeO3err = np.nanstd(TO3, axis=1)
-        
 
-        '''
+      
         self.linefitdict['Temp_mean_O3']=self.TeO3
         self.linefitdict['Temp_std_O3']=self.TeO3err
-        self.linefitdict['TeO3_snr']=self.TeO3/self.TeO3err
-        '''
+        
 
         # TN2 temperature diagnostic
         ne=100
@@ -310,14 +305,11 @@ class simulation:
 
         self.TeN2 = np.nanmean(TN2, axis=1)
         self.TeN2err = np.nanstd(TN2, axis=1)
-        self.TeN2snr=self.TeN2/self.TeN2err
-        #print(self.TeN2snr)
 
-        '''
+        
         self.linefitdict['Temp_mean_N2']=self.TeN2
         self.linefitdict['Temp_std_N2']=self.TeN2err
-        self.linefitdict['TeN2_snr']=self.TeN2/self.TeN2err
-        '''
+        
 
         # TS2 temperature diagnostic
         ne=100
@@ -333,11 +325,9 @@ class simulation:
         self.TeS2 = np.nanmean(TS2, axis=1)
         self.TeS2err = np.nanstd(TS2, axis=1)
 
-        '''
+        
         self.linefitdict['Temp_mean_S2']=self.TeS2
         self.linefitdict['Temp_std_S2']=self.TeS2err
-        self.linefitdict['TeS2_snr']=self.TeS2/self.TeS2err
-       '''
         
 
         # TS3 temperature diagnostic
@@ -349,22 +339,17 @@ class simulation:
             f9069=self.linefitdict['9069_flux']+np.random.randn(self.nfib)*self.linefitdict['9069_flux_err']
             TN2[:,i]=S3.getTemDen(f6312/f9069, den=ne, wave1=6312, wave2=9069)
 
-        '''
-        self.TeS3 = np.nanmean(TS3, axis=1)
-        self.TeS3err = np.nanstd(TS3, axis=1)
-        self.TeS3snr=self.TeS3/self.TeS3err
-        print(self.TeS3) 
+        #self.TeS3 = np.nanmean(TS3, axis=1)
+        #self.TeS3err = np.nanstd(TS3, axis=1)
+             
         
-        self.linefitdict['Temp_mean_S3']=self.TeS3
-        self.linefitdict['Temp_std_S3']=self.TeS3err
-        self.linefitdict['TeS3_snr']=self.TeS3/self.TeS3err
-
+        #self.linefitdict['Temp_mean_S3']=self.TeS3
+        #self.linefitdict['Temp_std_S3']=self.TeS3err   
         self.linefitdict['delta_ra']=self.linefitdict['delta_ra']
         self.linefitdict['delta_dec']=self.linefitdict['delta_dec']
 
         self.linefitdict.write('diag_Temp_Den.fits', overwrite=True)
         print(Table.read('diag_Temp_Den.fits'))
-        '''
 
     ############################################################## Electron density diagnostics ##############################################################
 
