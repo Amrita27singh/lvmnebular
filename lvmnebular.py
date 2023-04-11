@@ -240,7 +240,7 @@ class simulation:
 
         '''
 
-        self.linefitdict=Table.read(self.linefitfile)
+        #self.linefitdict=Table.read(self.linefitfile)
 
         if (self.nfib is None):
             RuntimeWarning('Undefined number of fibers. Probably you have not run fitlines yet', RuntimeWarning)
@@ -271,13 +271,13 @@ class simulation:
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
-        print(self.TeO2)
+        #print(self.TeO2)
 
-        
+        '''
         self.linefitdict['Temp_mean_O2']=self.TeO2
         self.linefitdict['Temp_std_O2']=self.TeO2err
         self.linefitdict['TeO2_snr']=self.TeO2/self.TeO2err
-        
+        '''
         
 
         # TO3 temperature diagnostic
@@ -293,11 +293,11 @@ class simulation:
         self.TeO3err = np.nanstd(TO3, axis=1)
         
 
-      
+        '''
         self.linefitdict['Temp_mean_O3']=self.TeO3
         self.linefitdict['Temp_std_O3']=self.TeO3err
         self.linefitdict['TeO3_snr']=self.TeO3/self.TeO3err
-        
+        '''
 
         # TN2 temperature diagnostic
         ne=100
@@ -311,7 +311,7 @@ class simulation:
         self.TeN2 = np.nanmean(TN2, axis=1)
         self.TeN2err = np.nanstd(TN2, axis=1)
         self.TeN2snr=self.TeN2/self.TeN2err
-        print(self.TeN2snr)
+        #print(self.TeN2snr)
 
         '''
         self.linefitdict['Temp_mean_N2']=self.TeN2
@@ -349,9 +349,11 @@ class simulation:
             f9069=self.linefitdict['9069_flux']+np.random.randn(self.nfib)*self.linefitdict['9069_flux_err']
             TN2[:,i]=S3.getTemDen(f6312/f9069, den=ne, wave1=6312, wave2=9069)
 
+        '''
         self.TeS3 = np.nanmean(TS3, axis=1)
         self.TeS3err = np.nanstd(TS3, axis=1)
-             
+        self.TeS3snr=self.TeS3/self.TeS3err
+        print(self.TeS3) 
         
         self.linefitdict['Temp_mean_S3']=self.TeS3
         self.linefitdict['Temp_std_S3']=self.TeS3err
@@ -362,7 +364,7 @@ class simulation:
 
         self.linefitdict.write('diag_Temp_Den.fits', overwrite=True)
         print(Table.read('diag_Temp_Den.fits'))
-        
+        '''
 
     ############################################################## Electron density diagnostics ##############################################################
 
