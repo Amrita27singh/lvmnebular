@@ -269,7 +269,7 @@ class simulation:
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
-        print(self.TeO2)
+        #print(self.TeO2)
 
         
         self.linefitdict['Temp_mean_O2']=self.TeO2
@@ -337,14 +337,14 @@ class simulation:
 
             f6312=self.linefitdict['6312_flux']+np.random.randn(self.nfib)*self.linefitdict['6312_flux_err']
             f9069=self.linefitdict['9069_flux']+np.random.randn(self.nfib)*self.linefitdict['9069_flux_err']
-            TN2[:,i]=S3.getTemDen(f6312/f9069, den=ne, wave1=6312, wave2=9069)
+            TS3[:,i]=S3.getTemDen(f6312/f9069, den=ne, wave1=6312, wave2=9069)
 
-        #self.TeS3 = np.nanmean(TS3, axis=1)
-        #self.TeS3err = np.nanstd(TS3, axis=1)
-             
-        
-        #self.linefitdict['Temp_mean_S3']=self.TeS3
-        #self.linefitdict['Temp_std_S3']=self.TeS3err   
+        self.TeS3 = np.nanmean(TS3, axis=1)
+        self.TeS3err = np.nanstd(TS3, axis=1)
+            
+    
+        self.linefitdict['Temp_mean_S3']=self.TeS3
+        self.linefitdict['Temp_std_S3']=self.TeS3err   
         self.linefitdict['delta_ra']=self.linefitdict['delta_ra']
         self.linefitdict['delta_dec']=self.linefitdict['delta_dec']
 
@@ -377,7 +377,7 @@ class simulation:
         self.neS2err = np.nanstd(NS2, axis=1)
         #print(self.neS2)
 
-    def plot(self, z1, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
+    def plotmap(self, z1, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
 
         sel=np.isfinite(z1)
         
