@@ -8,6 +8,7 @@ from scipy.optimize import curve_fit
 import itertools
 from scipy.fft import fftn, ifftn
 import imageio
+import matplotlib.tri as tri
 
 
 class simulation:
@@ -78,6 +79,7 @@ class simulation:
         self.neO2err=None
         self.neS2=None
         self.neS2err=None
+        self.table_linediag=None
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/'):
 
@@ -102,7 +104,7 @@ class simulation:
         self.nfib=len(self.fiberdata)
 
     
-    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=True, plot=False):
+    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=True, plot=False):  #try plotting for a subset of lines along with fitting all lines in lines0
         '''
         This function fits each line in self.lineid in the spectrum of each spaxel and measures fluxes, linewidthsm and line centers
 
@@ -174,10 +176,7 @@ class simulation:
                 self.linefitdict['delta_dec'].append(fiberid[mask]['y'].flatten())       
     
                 for j,line in enumerate(lines):
-
-
                     print("Fitting Line:", line)
-                    
 
                     if lines0[j]:         
                         plotout=plotdir+str(fiberid['id'][i])+'_'+str(lines0[j])
@@ -259,7 +258,7 @@ class simulation:
         ############################################################## Electron Temperature diagnostics ##############################################################
 
 
-        # TO2 temperature diagnostic (eduardo suggested trying blending 7319, 7320, 7330 and 7331 lines)
+        # TO2 temperature diagnostic #################(eduardo suggested trying blending 7319, 7320, 7330 and 7331 lines)#####################
         ne=100
         TO2=np.zeros((self.nfib, niter))
         for i in range (niter):
@@ -272,12 +271,12 @@ class simulation:
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
-        #print(self.TeO2)
+        print(self.TeO2)
 
-        '''
-        table_linediag['Temp_mean_O2']=self.TeO2
-        table_linediag['Temp_std_O2']=self.TeO2err
-        '''
+        
+        self.linefitdict['Temp_mean_O2']=self.TeO2
+        self.linefitdict['Temp_std_O2']=self.TeO2err
+        
         
 
         # TO3 temperature diagnostic
@@ -292,10 +291,10 @@ class simulation:
         self.TeO3 = np.nanmean(TO3, axis=1)
         self.TeO3err = np.nanstd(TO3, axis=1)
 
-        '''
-        table_linediag['Temp_mean_O3']=self.TeO3
-        table_linediag['Temp_std_O3']=self.TeO3err
-        '''
+      
+        self.linefitdict['Temp_mean_O3']=self.TeO3
+        self.linefitdict['Temp_std_O3']=self.TeO3err
+        
 
         # TN2 temperature diagnostic
         ne=100
@@ -309,10 +308,10 @@ class simulation:
         self.TeN2 = np.nanmean(TN2, axis=1)
         self.TeN2err = np.nanstd(TN2, axis=1)
 
-        '''
-        table_linediag['Temp_mean_N2']=self.TeN2
-        table_linediag['Temp_std_N2']=self.TeN2err
-        '''
+        
+        self.linefitdict['Temp_mean_N2']=self.TeN2
+        self.linefitdict['Temp_std_N2']=self.TeN2err
+        
 
         # TS2 temperature diagnostic
         ne=100
@@ -328,10 +327,10 @@ class simulation:
         self.TeS2 = np.nanmean(TS2, axis=1)
         self.TeS2err = np.nanstd(TS2, axis=1)
 
-        '''
-        table_linediag['Temp_mean_S2']=self.TeS2
-        table_linediag['Temp_std_S2']=self.TeS2err
-        '''
+        
+        self.linefitdict['Temp_mean_S2']=self.TeS2
+        self.linefitdict['Temp_std_S2']=self.TeS2err
+        
 
         # TS3 temperature diagnostic
         ne=100
@@ -345,16 +344,15 @@ class simulation:
         self.TeS3 = np.nanmean(TS3, axis=1)
         self.TeS3err = np.nanstd(TS3, axis=1)
              
-        '''
-        table_linediag['Temp_mean_S3']=self.TeS3
-        table_linediag['Temp_std_S3']=self.TeS3err
+        
+        self.linefitdict['Temp_mean_S3']=self.TeS3
+        self.linefitdict['Temp_std_S3']=self.TeS3err   
+        self.linefitdict['delta_ra']=self.linefitdict['delta_ra']
+        self.linefitdict['delta_dec']=self.linefitdict['delta_dec']
 
-        table_linediag.write('diag_Temp_Den.fits', overwrite=True)
-    
-        table_linediag['delta_ra']=self.linefitdict['delta_ra']
-        table_linediag['delta_dec']=self.linefitdict['delta_dec']
-    
-        '''
+        self.linefitdict.write('diag_Temp_Den.fits', overwrite=True)
+        print(Table.read('diag_Temp_Den.fits'))
+
     ############################################################## Electron density diagnostics ##############################################################
 
         # NO2 electron density diagnostic
@@ -381,6 +379,40 @@ class simulation:
         self.neS2err = np.nanstd(NS2, axis=1)
         #print(self.neS2)
 
+    def plot(self, z1, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
+
+        sel=np.isfinite(z1)
+        
+        newtable=Table.read('diag_Temp_Den.fits')
+        fig, ax = plt.subplots(figsize=(8,5))
+        triang = tri.Triangulation(self.linefitdict['delta_ra'][sel], self.linefitdict['delta_dec'][sel]) 
+        c = ax.tricontourf(triang, z1[sel], levels=np.linspace(min, max, nlevels))    
+        plt.colorbar(c) 
+        ax.set_title(title)
+        ax.set_xlabel('RA')
+        ax.set_ylabel('Dec')
+        ax.axis('equal')
+        plt.savefig(output+'.png')
+        
+
+        r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
+        fig, ax = plt.subplots(figsize=(8,5))
+        ax.plot(r[sel], z1[sel], '.')
+        ax.set_ylim(min, max)
+        ax.set_xlim(0, 260)
+        ax.set_ylabel(title)
+        ax.set_xlabel('Radius')
+        ax.legend()
+        plt.savefig(output+'_rad.png')
+        
+        '''
+        ########################################## Example #########################################
+        # Mean SIII Temperature
+        z1=TS3_mean
+        print (z1)
+        plotmap(z1, 1000, 9000, title=r'T$_{NII}$ (mean) '+s[2], output='./'+simname+'/TS3_mean_'+s[1]+'_'+s[2])
+        plt.show()
+        '''
 
 
     def bin(self, rbinmax, drbin, pertsim=False):
@@ -430,6 +462,7 @@ class simulation:
         hdul.writeto(filename, overwrite=True)
         plt.plot(bins, nspax)
         plt.show()
+
 
     def pertsim(self, npoints=30, dim=3, n=3, k0=0.5, dk0=0.05 ):
        
