@@ -272,8 +272,8 @@ class simulation:
         #print(self.TeO2)
 
         
-        self.linefitdict['Temp_mean_O2']=self.TeO2
-        self.linefitdict['Temp_std_O2']=self.TeO2err
+        self.linefitdict['TeO2']=self.TeO2
+        self.linefitdict['TeO2err']=self.TeO2err
         
         
 
@@ -290,8 +290,8 @@ class simulation:
         self.TeO3err = np.nanstd(TO3, axis=1)
 
       
-        self.linefitdict['Temp_mean_O3']=self.TeO3
-        self.linefitdict['Temp_std_O3']=self.TeO3err
+        self.linefitdict['TeO3']=self.TeO3
+        self.linefitdict['TeO3err']=self.TeO3err
         
 
         # TN2 temperature diagnostic
@@ -307,8 +307,8 @@ class simulation:
         self.TeN2err = np.nanstd(TN2, axis=1)
 
         
-        self.linefitdict['Temp_mean_N2']=self.TeN2
-        self.linefitdict['Temp_std_N2']=self.TeN2err
+        self.linefitdict['TeN2']=self.TeN2
+        self.linefitdict['TeN2err']=self.TeN2err
         
 
         # TS2 temperature diagnostic
@@ -326,8 +326,8 @@ class simulation:
         self.TeS2err = np.nanstd(TS2, axis=1)
 
         
-        self.linefitdict['Temp_mean_S2']=self.TeS2
-        self.linefitdict['Temp_std_S2']=self.TeS2err
+        self.linefitdict['TeS2']=self.TeS2
+        self.linefitdict['TeS2err']=self.TeS2err
         
 
         # TS3 temperature diagnostic
@@ -343,14 +343,10 @@ class simulation:
         self.TeS3err = np.nanstd(TS3, axis=1)
             
     
-        self.linefitdict['Temp_mean_S3']=self.TeS3
-        self.linefitdict['Temp_std_S3']=self.TeS3err   
-        self.linefitdict['delta_ra']=self.linefitdict['delta_ra']
-        self.linefitdict['delta_dec']=self.linefitdict['delta_dec']
-
-        self.linefitdict.write('diag_Temp_Den.fits', overwrite=True)
-        print(Table.read('diag_Temp_Den.fits'))
-
+        self.linefitdict['TeS3']=self.TeS3
+        self.linefitdict['TeS3err']=self.TeS3err   
+        
+        
     ############################################################## Electron density diagnostics ##############################################################
 
         # NO2 electron density diagnostic
@@ -363,7 +359,9 @@ class simulation:
 
         self.neO2 = np.nanmean(NO2, axis=1)
         self.neO2err = np.nanstd(NO2, axis=1)
-        #print(self.neO2)
+        
+        self.linefitdict['neO2']=self.neO2
+        self.linefitdict['neO2err']=self.neO2err   
 
         # NS2 electron density diagnostic
         NS2=np.zeros((self.nfib, niter))
@@ -375,16 +373,34 @@ class simulation:
 
         self.neS2 = np.nanmean(NS2, axis=1)
         self.neS2err = np.nanstd(NS2, axis=1)
-        #print(self.neS2)
+        
+        self.linefitdict['neS2']=self.neS2
+        self.linefitdict['neS2err']=self.neS2err
+        
 
-    def plotmap(self, z1, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
+        self.linefitdict['delta_ra']=self.linefitdict['delta_ra']
+        self.linefitdict['delta_dec']=self.linefitdict['delta_dec']
 
-        sel=np.isfinite(z1)
+        self.linefitdict.write('diag_Temp_Den.fits', overwrite=True)
+        
+
+
+    def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
+
+        plotdir=output
+        if (not os.path.isdir(plotdir)):
+            os.mkdir(plotdir)
+
+
+        sel=np.isfinite(z)
+        print(z[sel].shape)
+        print(self.linefitdict['delta_ra'][sel].shape)
+        print(self.linefitdict['delta_dec'][sel].shape)
         
         newtable=Table.read('diag_Temp_Den.fits')
         fig, ax = plt.subplots(figsize=(8,5))
-        triang = tri.Triangulation(self.linefitdict['delta_ra'][sel], self.linefitdict['delta_dec'][sel]) 
-        c = ax.tricontourf(triang, z1[sel], levels=np.linspace(min, max, nlevels))    
+        triang = tri.Triangulation(self.linefitdict['delta_ra'][sel].flatten(), self.linefitdict['delta_dec'][sel].flatten()) 
+        c = ax.tricontourf(triang, z[sel], levels=np.linspace(min, max, nlevels))    
         plt.colorbar(c) 
         ax.set_title(title)
         ax.set_xlabel('RA')
@@ -392,10 +408,13 @@ class simulation:
         ax.axis('equal')
         plt.savefig(output+'.png')
         
+    def plotprofile(self, z, title='line_map', output='line_map', bin=False, pertsim=False):
+        
+        sel=np.isfinite(z)
 
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
         fig, ax = plt.subplots(figsize=(8,5))
-        ax.plot(r[sel], z1[sel], '.')
+        ax.plot(r[sel], z[sel], '.')
         ax.set_ylim(min, max)
         ax.set_xlim(0, 260)
         ax.set_ylabel(title)
@@ -408,7 +427,7 @@ class simulation:
         # Mean SIII Temperature
         z1=TS3_mean
         print (z1)
-        plotmap(z1, 1000, 9000, title=r'T$_{NII}$ (mean) '+s[2], output='./'+simname+'/TS3_mean_'+s[1]+'_'+s[2])
+        plotmap(TeS3, 1000, 9000, title=r'T$_{SIII}$ (mean) '+s[2], output='./self.datadir+self.simname+'/'+self.simname+'_plots'+'/TS3_mean')
         plt.show()
         '''
 
