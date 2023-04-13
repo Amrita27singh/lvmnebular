@@ -387,7 +387,7 @@ class simulation:
 
     def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
 
-        plotdir=output
+        plotdir=self.datadir+self.simname+'/'+self.simname+'_plotmap/'
         if (not os.path.isdir(plotdir)):
             os.mkdir(plotdir)
 
@@ -406,9 +406,14 @@ class simulation:
         ax.set_xlabel('RA')
         ax.set_ylabel('Dec')
         ax.axis('equal')
-        plt.savefig(output+'.png')
+        plt.savefig(plotdir+'/'+output+'.png')
+
         
-    def plotprofile(self, z, title='line_map', output='line_map', bin=False, pertsim=False):
+    def plotprofile(self, z, min, max, title='line_map', output='line_map', bin=False, pertsim=False):
+
+        plotdir=self.datadir+self.simname+'/'+self.simname+'_plotprofile/'
+        if not (os.path.isdir(plotdir)):
+            os.mkdir(plotdir)
         
         sel=np.isfinite(z)
 
@@ -419,8 +424,8 @@ class simulation:
         ax.set_xlim(0, 260)
         ax.set_ylabel(title)
         ax.set_xlabel('Radius')
-        ax.legend()
-        plt.savefig(output+'_rad.png')
+        #ax.legend()
+        plt.savefig(plotdir+'/'+output+'_rad.png')
         
         '''
         ########################################## Example #########################################
