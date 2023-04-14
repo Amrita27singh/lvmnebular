@@ -430,14 +430,12 @@ class simulation:
         '''
         ########################################## Example #########################################
         # Mean SIII Temperature
-        z1=TS3_mean
-        print (z1)
         plotmap(TeS3, 1000, 9000, title=r'T$_{SIII}$ (mean) '+s[2], output='./self.datadir+self.simname+'/'+self.simname+'_plots'+'/TS3_mean')
         plt.show()
         '''
 
 
-    def bin(self, rbinmax, drbin, pertsim=False):
+    def radialbin(self, rbinmax, drbin, pertsim=False):
         '''
         This function will a 3d array which will provide us the binned line flux for each self.lineid in each spaxel.
         
