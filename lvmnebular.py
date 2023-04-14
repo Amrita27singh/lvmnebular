@@ -422,7 +422,7 @@ class simulation:
         ax.plot(r[sel], z[sel], '.')
         ax.set_ylim(min, max)
         ax.set_xlim(0, 260)
-        ax.set_ylabel(title+'(K)')
+        ax.set_ylabel(title)
         ax.set_xlabel('Radius (parsec)')
         #ax.legend()
         plt.savefig(plotdir+'/'+output+'_rad.png')
