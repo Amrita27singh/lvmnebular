@@ -402,7 +402,7 @@ class simulation:
         Plot out maps. 
         
         '''
-        plotdir=self.datadir+self.simname+'/'+self.simname+'_plotmap/'
+        plotdir=self.datadir+self.simname+'/'+self.simname+'_plotmaps/'
         if (not os.path.isdir(plotdir)):
             os.mkdir(plotdir)
 
