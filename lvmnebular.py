@@ -387,6 +387,21 @@ class simulation:
 
     def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
 
+        '''
+        This function will plot 1 D maps of Te, ne and error on Te and ne.
+        
+        Input:
+        z: Te, ne and errors from linefitdict table (1 D array)
+        min: minimum value of z (float)
+        max: maximum value of z (float)
+        nlevels: no. of levels in maps (int)
+        title: Title of maps (str)
+        output:Output names of the plot maps. (str)
+
+        Output: 
+        Plot out maps. 
+        
+        '''
         plotdir=self.datadir+self.simname+'/'+self.simname+'_plotmap/'
         if (not os.path.isdir(plotdir)):
             os.mkdir(plotdir)
@@ -410,6 +425,22 @@ class simulation:
 
         
     def plotprofile(self, z, min, max, title='line_map', output='line_map', bin=False, pertsim=False):
+
+        '''
+        This function will plot 2 D radial profiles of Te and ne.
+        
+        Input:
+        z: Te, ne and errors from linefitdict table (1 D array)
+        min: minimum value of z (float)
+        max: maximum value of z (float)
+        nlevels: no. of levels in maps (int)
+        title: Title of maps (str)
+        output:Output names of the plot maps. (str)
+
+        Output: 
+        Plot out radial profiles of Te and ne.  
+        
+        '''
 
         plotdir=self.datadir+self.simname+'/'+self.simname+'_plotprofile/'
         if not (os.path.isdir(plotdir)):
