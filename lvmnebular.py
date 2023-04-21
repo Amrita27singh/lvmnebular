@@ -9,6 +9,8 @@ import itertools
 from scipy.fft import fftn, ifftn
 import imageio
 import matplotlib.tri as tri
+from scipy.spatial import Voronoi
+
 
 
 class simulation:
@@ -48,8 +50,11 @@ class simulation:
         self.err = None
         self.fiberdata = None
         self.nfib=None
-        self.nfibbin=None
         self.linefitdict=None
+
+        self.nfibbin = None
+        self.binflux = None
+        self.binerr = None
 
         self.ra=None
         self.dec=None
@@ -78,12 +83,18 @@ class simulation:
         self.neS2err=None
 
 
-    def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/'):
+    def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', bin=False):
 
         self.datadir=datadir
         self.simname=simname
         self.exptime=exptime
-        self.simfile = self.datadir+self.simname+'/outputs/'+self.simname+'_linear_full_'+str(int(self.exptime))+'_flux.fits'        
+
+        if bin:
+            self.simfile=self.datadir+self.simname+'/'+self.simname+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
+
+        else:
+            self.simfile = self.datadir+self.simname+'/outputs/'+self.simname+'_linear_full_'+str(int(self.exptime))+'_flux.fits'    
+
         #read simulator output in the right path correpsonding to "name"
         print("Loading simulation: "+self.datadir+self.simname+'\n')
 
@@ -101,7 +112,7 @@ class simulation:
         self.nfib=len(self.fiberdata)
 
     
-    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=True, plot=False):  #try plotting for a subset of lines along with fitting all lines in lines0
+    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=True, plot=False):  #need to fix this for binning
         '''
         This function fits each line in self.lineid in the spectrum of each spaxel and measures fluxes, linewidthsm and line centers
 
@@ -121,6 +132,7 @@ class simulation:
         self.plot=plot
         self.lineid=lines0.astype(str)
         print('Fitting Emmission Lines:', self.lineid)
+
         if (self.nfib == None):
             raise Exception('Simulation has not been loaded. Run loadsim first.')
         
@@ -382,7 +394,93 @@ class simulation:
         self.linefitdict['delta_dec']=self.linefitdict['delta_dec']
 
         self.linefitdict.write('diag_Temp_Den.fits', overwrite=True)
+
+    '''
+    def binflux(self, targetsnr=10, plot=False):
+
         
+        Input:
+        targetsnr: The desired minimum snr (int; default is 10)
+
+        Output:
+        Binned flux, error in each spaxel.
+        
+        
+        with fits.open(self.simfile) as hdu:
+            self.header = hdu[0].header
+            self.wave = hdu['WAVE'].data ##1D array
+            self.flux = hdu['TARGET'].data ##2D array(no. of fibers, wave)
+            self.err = hdu['ERR'].data
+            self.fiberdata = Table.read(hdu['FIBERID'])
+            #print(self.fiberdata)
+
+        self.nfib=len(self.fiberdata)
+
+        if self.flux is None or self.err is None:
+            raise Exception('Flux and error arrays are not set. Run loadsim first.')
+
+        # Set up the Voronoi bins
+        points = np.column_stack([self.fiberdata['x'], self.fiberdata['y']])
+
+
+        for i in range(self.nfib):
+            bin_flux[bin_num[i]] += self.flux[i]
+            bin_err[bin_num[i]] += self.err[i]**2
+
+        # Normalize the error to get the standard deviation
+        bin_err = np.sqrt(bin_err)
+
+        # calculate signal-to-noise ratio (SNR) of each spaxel
+        snr = np.abs(bin_flux) / np.abs(bin_err)
+
+        # define desired SNR for each bin
+        bin_snr = np.full_like(snr, np.inf)
+        bin_snr[snr > 0] = targetsnr
+
+        # group spaxels with similar SNR into a bin until desired SNR is reached
+        bin_num, _ = Voronoi(points, bin_snr)
+
+        # calculate weighted average flux and error for each bin
+        bin_flux = np.zeros(bin_num.max()+1)
+        bin_err = np.zeros_like(bin_flux)
+        bin_counts = np.zeros_like(bin_flux)
+
+        for i in range(len(bin_flux)):
+            mask = bin_num == i
+            bin_counts[i] = mask.sum()
+            bin_flux[i] = np.sum(self.binflux[mask] / self.binerr[mask]**2) / np.sum(1 / self.binerr[mask]**2)
+            bin_err[i] = np.sqrt(1 / np.sum(1 / self.binerr[mask]**2))
+
+        filename =self.datadir+self.simname+'_radbinned_'+str(int(self.exptime))+'_flux.fits'
+        directory=self.datadir+self.simname+'_radbinned/'+'/outputs/'+
+        if ( not os.path.isdir(directory)):
+            os.mkdir(directory)
+        plotdir=directory+'/linefitplots/'
+        if ( not os.path.isdir(plotdir)):
+           os.mkdir(plotdir)
+        hdul.writeto(filename, overwrite=True)
+        plt.plot(bins, nspax)
+        plt.show()
+        
+
+        return bin_flux, bin_err, bin_counts, bin_num
+
+
+
+        
+        
+        if plot:
+            fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12, 5))
+            ax1.scatter(points[:, 0], points[:, 1], c=bin_num, s=10, cmap='rainbow')
+            ax1.set(title='Voronoi bins', xlabel='x', ylabel='y')
+            ax2.hist(bin_num, bins=bin_num.max(), color='C0')
+            ax2.set(title='Bin size histogram', xlabel='Bin number', ylabel='Number of fibers')
+            plt.show()
+        
+
+        print(bin_flux, bin_err, bin_counts, bin_num)
+
+        '''
 
 
     def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
@@ -454,19 +552,20 @@ class simulation:
         ax.set_ylim(min, max)
         ax.set_xlim(0, 260)
         ax.set_ylabel(title)
+        
+        '''
+        z1 = np.polyfit(z[sel], 3)
+        p = np.poly1d(z1)
+        plt.plot(r[sel],p(r[sel]),"r--")
+        '''
+
         ax.set_xlabel('Radius (parsec)')
         #ax.legend()
         plt.savefig(plotdir+'/'+output+'_rad.png')
         
-        '''
-        ########################################## Example #########################################
-        # Mean SIII Temperature
-        plotmap(TeS3, 1000, 9000, title=r'T$_{SIII}$ (mean) '+s[2], output='./self.datadir+self.simname+'/'+self.simname+'_plots'+'/TS3_mean')
-        plt.show()
-        '''
-
 
     def radialbin(self, rbinmax, drbin, pertsim=False):
+
         '''
         This function will a 3d array which will provide us the binned line flux for each self.lineid in each spaxel.
         
@@ -476,8 +575,18 @@ class simulation:
         
         Output:
         Binned spectra for lineflux in each spaxel
-        
         '''
+        self.simfile = self.datadir+self.simname+'/outputs/'+self.simname+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
+
+        with fits.open(self.simfile) as hdu:
+            self.header = hdu[0].header
+            self.wave = hdu['WAVE'].data ##1D array
+            self.flux = hdu['TARGET'].data ##2D array(no. of fibers, wave)
+            self.err = hdu['ERR'].data
+            self.fiberdata = Table.read(hdu['FIBERID'])
+            #print(self.fiberdata)
+
+        self.nfib=len(self.fiberdata)
 
         radius = np.sqrt(self.fiberdata['x']**2 + self.fiberdata['y']**2)
         bins = np.arange(drbin/2, rbinmax-drbin/2, drbin)
@@ -485,13 +594,16 @@ class simulation:
         header = self.header
         binned_fluxes = np.zeros((len(bins)-1, len(self.wave)))
         binned_err = np.zeros((len(bins)-1, len(self.wave)))
+
         newx = []
+
         for i in range(len(bins)-1):
             nflux, nerr, nsel = bin_spectra(bins[i]-drbin, bins[i]+drbin, radius, self.flux, self.err)
             nspax[i]=nsel
             binned_fluxes[i] = nflux
             binned_err[i] = nerr
             newx.append(bins[i])
+
         hdu_primary = fits.PrimaryHDU(header=header)
         hdu_target = fits.ImageHDU(data=binned_fluxes, name='TARGET')
         hdu_errors = fits.ImageHDU(data=binned_err, name='ERR')
@@ -499,21 +611,28 @@ class simulation:
         newtable = {'id': range(0, len(bins)-1),
                     'y': np.zeros(len(bins)-1),
                     'x': newx}
+
         newtable = Table(newtable)
         hdu_table = fits.BinTableHDU(newtable, name='FIBERID')
         hdul = fits.HDUList([hdu_primary, hdu_target, hdu_errors, hdu_wave, hdu_table])
         
-        filename =self.datadir+self.simname+'_binned_'+str(int(self.exptime))+'_flux.fits'
-        directory=self.datadir+self.simname+'_binned/'
+        '''
+        filename =self.simname+'_radbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
+        directory=self.datadir+self.simname+'_radbinned/'+'/output/'
+        '''
+
+        filename=self.simname+'_radbinned/'+self.simname+'_radbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
+        directory=self.simname+'_radbinned/'
+        
         if ( not os.path.isdir(directory)):
             os.mkdir(directory)
         plotdir=directory+'/linefitplots/'
         if ( not os.path.isdir(plotdir)):
            os.mkdir(plotdir)
+
         hdul.writeto(filename, overwrite=True)
         plt.plot(bins, nspax)
         plt.show()
-
 
     def pertsim(self, npoints=30, dim=3, n=3, k0=0.5, dk0=0.05 ):
        
@@ -728,26 +847,6 @@ def field_delta(k0, dk0, dim, npoints):
     new_field = np.real(ifftn(pspect_field))
     
     return new_field
-
-##################################################################################################################################################
-
-################################################### Function used to run MC simulations ##########################################################
-'''
-def new_measurements(value, errs):
-    
-    This function will be used to run monte carlo simulation on line fluxes.
-    Input:
-    value:line_flux
-    errs: line_fluxerr
-    
-    Output:
-    random values (1D numpy array)
-    
-    
-    delta = np.random.randn(len(errs)) * errs
-    new_values = np.max([value + delta, np.zeros(len(errs))], axis=0)
-    return new_values
-'''
 
 
 
