@@ -9,8 +9,8 @@ import itertools
 from scipy.fft import fftn, ifftn
 import imageio
 import matplotlib.tri as tri
-from scipy.spatial import Voronoi
-
+from vorbin.voronoi_2d_binning import voronoi_2d_binning
+#from vorbin import voronoi_2d_binning
 
 
 class simulation:
@@ -395,174 +395,6 @@ class simulation:
 
         self.linefitdict.write('diag_Temp_Den.fits', overwrite=True)
 
-    '''
-    def binflux(self, targetsnr=10, plot=False):
-
-        
-        Input:
-        targetsnr: The desired minimum snr (int; default is 10)
-
-        Output:
-        Binned flux, error in each spaxel.
-        
-        
-        with fits.open(self.simfile) as hdu:
-            self.header = hdu[0].header
-            self.wave = hdu['WAVE'].data ##1D array
-            self.flux = hdu['TARGET'].data ##2D array(no. of fibers, wave)
-            self.err = hdu['ERR'].data
-            self.fiberdata = Table.read(hdu['FIBERID'])
-            #print(self.fiberdata)
-
-        self.nfib=len(self.fiberdata)
-
-        if self.flux is None or self.err is None:
-            raise Exception('Flux and error arrays are not set. Run loadsim first.')
-
-        # Set up the Voronoi bins
-        points = np.column_stack([self.fiberdata['x'], self.fiberdata['y']])
-
-
-        for i in range(self.nfib):
-            bin_flux[bin_num[i]] += self.flux[i]
-            bin_err[bin_num[i]] += self.err[i]**2
-
-        # Normalize the error to get the standard deviation
-        bin_err = np.sqrt(bin_err)
-
-        # calculate signal-to-noise ratio (SNR) of each spaxel
-        snr = np.abs(bin_flux) / np.abs(bin_err)
-
-        # define desired SNR for each bin
-        bin_snr = np.full_like(snr, np.inf)
-        bin_snr[snr > 0] = targetsnr
-
-        # group spaxels with similar SNR into a bin until desired SNR is reached
-        bin_num, _ = Voronoi(points, bin_snr)
-
-        # calculate weighted average flux and error for each bin
-        bin_flux = np.zeros(bin_num.max()+1)
-        bin_err = np.zeros_like(bin_flux)
-        bin_counts = np.zeros_like(bin_flux)
-
-        for i in range(len(bin_flux)):
-            mask = bin_num == i
-            bin_counts[i] = mask.sum()
-            bin_flux[i] = np.sum(self.binflux[mask] / self.binerr[mask]**2) / np.sum(1 / self.binerr[mask]**2)
-            bin_err[i] = np.sqrt(1 / np.sum(1 / self.binerr[mask]**2))
-
-        filename =self.datadir+self.simname+'_radbinned_'+str(int(self.exptime))+'_flux.fits'
-        directory=self.datadir+self.simname+'_radbinned/'+'/outputs/'+
-        if ( not os.path.isdir(directory)):
-            os.mkdir(directory)
-        plotdir=directory+'/linefitplots/'
-        if ( not os.path.isdir(plotdir)):
-           os.mkdir(plotdir)
-        hdul.writeto(filename, overwrite=True)
-        plt.plot(bins, nspax)
-        plt.show()
-        
-
-        return bin_flux, bin_err, bin_counts, bin_num
-
-
-
-        
-        
-        if plot:
-            fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12, 5))
-            ax1.scatter(points[:, 0], points[:, 1], c=bin_num, s=10, cmap='rainbow')
-            ax1.set(title='Voronoi bins', xlabel='x', ylabel='y')
-            ax2.hist(bin_num, bins=bin_num.max(), color='C0')
-            ax2.set(title='Bin size histogram', xlabel='Bin number', ylabel='Number of fibers')
-            plt.show()
-        
-
-        print(bin_flux, bin_err, bin_counts, bin_num)
-
-        '''
-
-
-    def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
-
-        '''
-        This function will plot 1 D maps of Te, ne and error on Te and ne.
-        
-        Input:
-        z: Te, ne and errors from linefitdict table (1 D array)
-        min: minimum value of z (float)
-        max: maximum value of z (float)
-        nlevels: no. of levels in maps (int)
-        title: Title of maps (str)
-        output:Output names of the plot maps. (str)
-
-        Output: 
-        Plot out maps. 
-        
-        '''
-        plotdir=self.datadir+self.simname+'/'+self.simname+'_plotmaps/'
-        if (not os.path.isdir(plotdir)):
-            os.mkdir(plotdir)
-
-
-        sel=np.isfinite(z)
-        print(z[sel].shape)
-        print(self.linefitdict['delta_ra'][sel].shape)
-        print(self.linefitdict['delta_dec'][sel].shape)
-        
-        newtable=Table.read('diag_Temp_Den.fits')
-        fig, ax = plt.subplots(figsize=(8,5))
-        triang = tri.Triangulation(self.linefitdict['delta_ra'][sel].flatten(), self.linefitdict['delta_dec'][sel].flatten()) 
-        c = ax.tricontourf(triang, z[sel], levels=np.linspace(min, max, nlevels))    
-        plt.colorbar(c) 
-        ax.set_title(title)
-        ax.set_xlabel('RA')
-        ax.set_ylabel('Dec')
-        ax.axis('equal')
-        plt.savefig(plotdir+'/'+output+'.png')
-
-        
-    def plotprofile(self, z, min, max, title='line_map', output='line_map', bin=False, pertsim=False):
-
-        '''
-        This function will plot 2 D radial profiles of Te and ne.
-        
-        Input:
-        z: Te, ne and errors from linefitdict table (1 D array)
-        min: minimum value of z (float)
-        max: maximum value of z (float)
-        nlevels: no. of levels in maps (int)
-        title: Title of maps (str)
-        output:Output names of the plot maps. (str)
-
-        Output: 
-        Plot out radial profiles of Te and ne.  
-        
-        '''
-
-        plotdir=self.datadir+self.simname+'/'+self.simname+'_plotprofile/'
-        if not (os.path.isdir(plotdir)):
-            os.mkdir(plotdir)
-        
-        sel=np.isfinite(z)
-
-        r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
-        fig, ax = plt.subplots(figsize=(8,5))
-        ax.plot(r[sel], z[sel], '.')
-        ax.set_ylim(min, max)
-        ax.set_xlim(0, 260)
-        ax.set_ylabel(title)
-        
-        '''
-        z1 = np.polyfit(z[sel], 3)
-        p = np.poly1d(z1)
-        plt.plot(r[sel],p(r[sel]),"r--")
-        '''
-
-        ax.set_xlabel('Radius (parsec)')
-        #ax.legend()
-        plt.savefig(plotdir+'/'+output+'_rad.png')
-        
 
     def radialbin(self, rbinmax, drbin, pertsim=False):
 
@@ -634,6 +466,32 @@ class simulation:
         plt.plot(bins, nspax)
         plt.show()
 
+
+    
+    def voronoibin(self, target_sn=10, lineid='6563', plot=False):
+        '''
+        Input:
+        targetsnr: The desired minimum snr (int; default is 10)
+
+        Output:
+        Binned flux, error spectrum in each spaxel.
+        '''
+
+        if self.linefitdict is None:
+            raise Exception('Emission lines not fit yet, run fitlines first.')
+
+       # Set up the Voronoi bins 
+        
+        x, y=self.fiberdata['x'], self.fiberdata['y']
+        print(np.shape(x))
+        signal, noise=self.linefitdict[lineid+'_flux'], self.linefitdict[lineid+'_flux_err']
+        print(np.shape(signal))
+
+        bin_number, x_gen, y_gen, x_bar, y_bar, sn, nPixels, scale = voronoi_2d_binning(x, y, signal, noise, target_sn, cvt=True, pixelsize=None, plot=True, quiet=True, sn_func=None, wvt=False)
+        
+        print(bin_number, x_gen, y_gen, x_bar, y_bar, sn, nPixels, scale)
+
+
     def pertsim(self, npoints=30, dim=3, n=3, k0=0.5, dk0=0.05 ):
        
         '''
@@ -665,9 +523,87 @@ class simulation:
         with imageio.get_writer('./new_field_test_'+str(float(k0))+'.gif', mode='I') as writer:
             for slice in new_field:
                 writer.append_data(slice)
+    
+##################################################################### Plotting methods #########################################################
+
+    def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
+
+            '''
+            This function will plot 1 D maps of Te, ne and error on Te and ne.
+
+            Input:
+            z: Te, ne and errors from linefitdict table (1 D array)
+            min: minimum value of z (float)
+            max: maximum value of z (float)
+            nlevels: no. of levels in maps (int)
+            title: Title of maps (str)
+            output:Output names of the plot maps. (str)
+
+            Output: 
+            Plot out maps. 
+
+            '''
+            plotdir=self.datadir+self.simname+'/'+self.simname+'_plotmaps/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir)
 
 
+            sel=np.isfinite(z)
 
+            newtable=Table.read('diag_Temp_Den.fits')
+            fig, ax = plt.subplots(figsize=(8,5))
+            triang = tri.Triangulation(self.linefitdict['delta_ra'][sel].flatten(), self.linefitdict['delta_dec'][sel].flatten()) 
+            c = ax.tricontourf(triang, z[sel], levels=np.linspace(min, max, nlevels))    
+            plt.colorbar(c) 
+            ax.set_title(title)
+            ax.set_xlabel('RA')
+            ax.set_ylabel('Dec')
+            ax.axis('equal')
+            plt.savefig(plotdir+'/'+output+'.png')
+
+        
+    def plotprofile(self, z, min, max, title='line_map', output='line_map', bin=False, pertsim=False):
+
+        '''
+        This function will plot 2 D radial profiles of Te and ne.
+        
+        Input:
+        z: Te, ne and errors from linefitdict table (1 D array)
+        min: minimum value of z (float)
+        max: maximum value of z (float)
+        nlevels: no. of levels in maps (int)
+        title: Title of maps (str)
+        output:Output names of the plot maps. (str)
+
+        Output: 
+        Plot out radial profiles of Te and ne.  
+        
+        '''
+
+        plotdir=self.datadir+self.simname+'/'+self.simname+'_plotprofile/'
+        if not (os.path.isdir(plotdir)):
+            os.mkdir(plotdir)
+        
+        sel=np.isfinite(z)
+
+        r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
+        
+        fig, ax = plt.subplots(figsize=(8,5))
+        ax.plot(r[sel], z[sel], '.')
+        ax.set_ylim(min, max)
+        ax.set_xlim(0, 260)
+        ax.set_ylabel(title)
+        
+        '''
+        z1 = np.polyfit(z[sel], 3)
+        p = np.poly1d(z1)
+        plt.plot(r[sel],p(r[sel]),"r--")
+        '''
+
+        ax.set_xlabel('Radius (arcsec)')
+        #ax.legend()
+        plt.savefig(plotdir+'/'+output+'_rad.png')
+ 
 #################################################################################### Functions used in above methods #################################################################################################
 
 ################################################ Functions used in fitlines method ####################################################
