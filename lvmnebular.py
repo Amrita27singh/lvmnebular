@@ -10,7 +10,10 @@ from scipy.fft import fftn, ifftn
 import imageio
 import matplotlib.tri as tri
 from vorbin.voronoi_2d_binning import voronoi_2d_binning
-#from vorbin import voronoi_2d_binning
+from scipy.interpolate import interp1d
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+
 
 
 class simulation:
@@ -430,7 +433,7 @@ class simulation:
         newx = []
 
         for i in range(len(bins)-1):
-            nflux, nerr, nsel = bin_spectra(bins[i]-drbin, bins[i]+drbin, radius, self.flux, self.err)
+            nflux, nerr, nsel = binrad_spectra(bins[i]-drbin, bins[i]+drbin, radius, self.flux, self.err)
             nspax[i]=nsel
             binned_fluxes[i] = nflux
             binned_err[i] = nerr
@@ -447,11 +450,6 @@ class simulation:
         newtable = Table(newtable)
         hdu_table = fits.BinTableHDU(newtable, name='FIBERID')
         hdul = fits.HDUList([hdu_primary, hdu_target, hdu_errors, hdu_wave, hdu_table])
-        
-        '''
-        filename =self.simname+'_radbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
-        directory=self.datadir+self.simname+'_radbinned/'+'/output/'
-        '''
 
         filename=self.simname+'_radbinned/'+self.simname+'_radbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
         directory=self.simname+'_radbinned/'
@@ -466,12 +464,12 @@ class simulation:
         plt.plot(bins, nspax)
         plt.show()
 
-
     
     def voronoibin(self, target_sn=10, lineid='6563', plot=False):
         '''
         Input:
         targetsnr: The desired minimum snr (int; default is 10)
+        lineid: rest frame wavelength of emission lines
 
         Output:
         Binned flux, error spectrum in each spaxel.
@@ -483,13 +481,11 @@ class simulation:
        # Set up the Voronoi bins 
         
         x, y=self.fiberdata['x'], self.fiberdata['y']
-        print(np.shape(x))
         signal, noise=self.linefitdict[lineid+'_flux'], self.linefitdict[lineid+'_flux_err']
-        print(np.shape(signal))
 
         bin_number, x_gen, y_gen, x_bar, y_bar, sn, nPixels, scale = voronoi_2d_binning(x, y, signal, noise, target_sn, cvt=True, pixelsize=None, plot=True, quiet=True, sn_func=None, wvt=False)
         
-        print(bin_number, x_gen, y_gen, x_bar, y_bar, sn, nPixels, scale)
+        print(bin_number, x_gen, y_gen, x_bar, y_bar, sn, nPixels, scale, bin_number.shape, x_gen.shape, y_gen.shape, x_bar.shape, y_bar.shape, sn.shape, nPixels.shape, scale.shape)
 
 
     def pertsim(self, npoints=30, dim=3, n=3, k0=0.5, dk0=0.05 ):
@@ -579,30 +575,24 @@ class simulation:
         Plot out radial profiles of Te and ne.  
         
         '''
-
+        
         plotdir=self.datadir+self.simname+'/'+self.simname+'_plotprofile/'
         if not (os.path.isdir(plotdir)):
             os.mkdir(plotdir)
         
-        sel=np.isfinite(z)
+        sel=np.isfinite(z)      
 
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
-        
+
         fig, ax = plt.subplots(figsize=(8,5))
-        ax.plot(r[sel], z[sel], '.')
+        ax.plot(r[sel], z[sel], '.', label='data')
+
         ax.set_ylim(min, max)
         ax.set_xlim(0, 260)
         ax.set_ylabel(title)
-        
-        '''
-        z1 = np.polyfit(z[sel], 3)
-        p = np.poly1d(z1)
-        plt.plot(r[sel],p(r[sel]),"r--")
-        '''
-
         ax.set_xlabel('Radius (arcsec)')
-        #ax.legend()
-        plt.savefig(plotdir+'/'+output+'_rad.png')
+        ax.legend()
+        plt.savefig(plotdir+'/'+output+'_rad.png')      
  
 #################################################################################### Functions used in above methods #################################################################################################
 
@@ -709,12 +699,12 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=4, plot=True, plotout='linefit
         ax.legend()
         plt.savefig(plotout+'.png')
     return popt, pcov
-##################################################################################################################################################
+#######################################################################################################################################################
 
 
 ################################################### Function used to bin spectra in simulations #######################################################
 
-def bin_spectra(rmin, rmax, radius, spectra, errors):
+def binrad_spectra(rmin, rmax, radius, spectra, errors):
 
     selected = np.where((radius >= rmin) & (radius < rmax))[0]
 

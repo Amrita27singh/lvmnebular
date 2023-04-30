@@ -25,20 +25,17 @@ def Ionization(self):
     data=hdu[1].data
     #print(data)
     
-    nS0=data[10]/np.sum([data[10],data[11],data[12]], dtype=np.float32)
-    print(nS0)
-    print(np.sum([data[10],data[11],data[12]], dtype=np.float32))
+    nS0=data[10]/data[3]
+    nSI=data[11]/data[3]
+    nSII=data[12]/data[3]
     
-    nSI=data[11]/np.sum([data[10],data[11],data[12]], dtype=np.float32)
-    nSII=data[12]/np.sum([data[10],data[11],data[12]], dtype=np.float32)
+    nO0=data[4]/data[3]
+    nOI=data[5]/data[3]
+    nOII=data[6]/data[3]
     
-    nO0=data[4]/np.sum([data[4],data[5],data[6]], dtype=np.float32)
-    nOI=data[5]/np.sum([data[4],data[5],data[6]], dtype=np.float32)
-    nOII=data[6]/np.sum([data[4],data[5],data[6]], dtype=np.float32)
-    
-    nN0=data[7]/np.sum([data[7],data[8],data[9]], dtype=np.float32)
-    nNI=data[8]/np.sum([data[7],data[8],data[9]], dtype=np.float32)
-    nNII=data[9]/np.sum([data[7],data[8],data[9]], dtype=np.float32)
+    nN0=data[7]/data[3]
+    nNI=data[8]/data[3]
+    nNII=data[9]/data[3]
     
     fig, ax=plt.subplots()
     
@@ -49,5 +46,5 @@ def Ionization(self):
     ax.set_title('Ionization fraction of Sulphur ions')
     ax.set_xlabel('Radius(pc)')
     ax.set_ylabel('Ionization fraction')
-    plt.savefig(self.datadir+self.simname+'/'+self.simname'_plotprofile/'+'Ionization fraction of Sulphur vs R.png', dpi=300)
+    plt.savefig(self.datadir+self.simname+'/'+self.simname+'_plotprofile/'+'Ionization fraction of Sulphur vs R.png', dpi=300)
     plt.show()
