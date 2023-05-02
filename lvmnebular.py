@@ -84,6 +84,7 @@ class simulation:
         self.neO2err=None
         self.neS2=None
         self.neS2err=None
+        self.target_sn=None
 
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', bin=False):
@@ -474,11 +475,10 @@ class simulation:
         Output:
         Binned flux, error spectrum in each spaxel.
         '''
+        self.target_sn=target_sn
 
         if self.linefitdict is None:
             raise Exception('Emission lines not fit yet, run fitlines first.')
-
-       # Set up the Voronoi bins 
         
         x, y=self.fiberdata['x'], self.fiberdata['y']
         signal, noise=self.linefitdict[lineid+'_flux'], self.linefitdict[lineid+'_flux_err']
@@ -719,6 +719,21 @@ def binrad_spectra(rmin, rmax, radius, spectra, errors):
     newerr = np.sqrt(np.sum(newerr**2, axis=0))
 
     return newflux, newerr, len(selected)
+
+def binvor_spectra(nPixels, bin_number, spectra, errors):
+
+    newflux = np.zeros((len(nPixels), spectra.shape[1]))
+    newerr = np.zeros((len(nPixels), spectra.shape[1]))
+
+    for i, id in enumerate(bin_number):
+        newflux[i] = spectra[id]
+        newerr[i] = errors[id]
+
+    newflux = newflux.sum(axis=0)
+    newerr = np.sqrt(np.sum(newerr**2, axis=0))
+
+    return newflux, newerr, len(nPixels)
+
 
 #################################################### Functions used in perturbing the simulation ######################################################
 
