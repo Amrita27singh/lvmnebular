@@ -459,7 +459,7 @@ class simulation:
         hdul = fits.HDUList([hdu_primary, hdu_target, hdu_errors, hdu_wave, hdu_table])
 
         filename=self.simname+'_radbinned/'+self.simname+'_radbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
-        directory=self.simname+'_radbinned/'
+        directory=self.simname+'/'+self.simname+'_radbinned/'
         
         if ( not os.path.isdir(directory)):
             os.mkdir(directory)
@@ -472,11 +472,12 @@ class simulation:
         plt.show()
 
     
-    def voronoibin(self, target_sn=10, lineid='6563', plot=False):
+    def voronoibin(self, target_sn=10, lineid='6563', label='flux', plot=False):
         '''
         Input:
         targetsnr: The desired minimum snr (int; default is 10)
         lineid: rest frame wavelength of emission lines
+        label: used to put title of plot
 
         Output:
         Binned flux, error spectrum in each spaxel.
@@ -504,9 +505,9 @@ class simulation:
             sel=bin_number==binid[i]
             vorbinflux[i,:]=np.sum(self.flux[sel,:], axis=0)
             vorbinerr[i,:]=np.sum(self.err[sel,:], axis=0)
-
+       
         self.vorbinerr=vorbinerr  
-
+        '''
         vorbintable={'bin':[],
                     'x': [],
                     'y': [],
@@ -538,11 +539,21 @@ class simulation:
         vorbintable.write(self.simname+'_vorbinned/'+self.simname+'_vorbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits', overwrite=True)
         #vorbintable.write(directory+filename, overwrite=True)
         #print(vorbintable)
+        '''
+        directory=self.simname+'/'+self.simname+'_vorbinned/'
+        if ( not os.path.isdir(directory)):
+            os.mkdir(directory)
+
+        plotdir=directory+'/outputplots/'
+        if ( not os.path.isdir(plotdir)):
+           os.mkdir(plotdir)
 
         fig, ax=plt.subplots()
-        ax.plot(self.wave, vorbinflux[i,:])
-        fig, ax1=plt.subplots()
-        ax1.plot(self.wave, vorbinerr[i,:])
+        ax.plot(self.wave, vorbinflux[i,:], label='flux')
+        ax.plot(self.wave, vorbinerr[i,:], label='error')
+        ax.set_xlabel('wavelength $A$')
+        plt.legend()
+        plt.savefig(plotdir+'/'+lineid+'.png')
         plt.show() 
 
 
