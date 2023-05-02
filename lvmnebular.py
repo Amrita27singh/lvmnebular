@@ -86,6 +86,12 @@ class simulation:
         self.neS2err=None
         self.target_sn=None
 
+        # voronoi binning attributes
+        self.nbins=None
+        self.vorbinflux=None
+        self.vorbinerr=None
+        self.binid=None
+
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', bin=False):
 
@@ -485,7 +491,59 @@ class simulation:
 
         bin_number, x_gen, y_gen, x_bar, y_bar, sn, nPixels, scale = voronoi_2d_binning(x, y, signal, noise, target_sn, cvt=True, pixelsize=None, plot=True, quiet=True, sn_func=None, wvt=False)
         
-        print(bin_number, x_gen, y_gen, x_bar, y_bar, sn, nPixels, scale, bin_number.shape, x_gen.shape, y_gen.shape, x_bar.shape, y_bar.shape, sn.shape, nPixels.shape, scale.shape)
+        nbins=len(nPixels)
+        self.nbins=nbins
+
+        vorbinflux=np.zeros((nbins, len(self.wave)))
+        vorbinerr=np.zeros((nbins, len(self.wave)))
+        binid=np.unique(bin_number)
+        self.vorbinflux=vorbinflux
+        
+        for i in range(nbins):
+
+            sel=bin_number==binid[i]
+            vorbinflux[i,:]=np.sum(self.flux[sel,:], axis=0)
+            vorbinerr[i,:]=np.sum(self.err[sel,:], axis=0)
+
+        self.vorbinerr=vorbinerr  
+
+        vorbintable={'bin':[],
+                    'x': [],
+                    'y': [],
+                    'flux': [],
+                    'error': [],
+                    'wave': []
+                    }
+
+        for i in range(nbins):
+
+            vorbintable['bin'].append(i) 
+            vorbintable['x'].append(x_gen)
+            vorbintable['y'].append(y_gen)
+            vorbintable['flux'].append(vorbinflux)
+            vorbintable['error'].append(vorbinerr)
+            vorbintable['wave'].append(self.wave)
+
+        vorbintable = Table(vorbintable)
+        vorbintable.write(filename, overwrite=True)
+        print(vorbintable)
+
+        filename=self.simname+'_vorbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
+        directory=self.simname+'_vorbinned/'
+        
+        if ( not os.path.isdir(directory)):
+            os.mkdir(directory)
+
+        vorbintable = Table(vorbintable)
+        vorbintable.write(self.simname+'_vorbinned/'+self.simname+'_vorbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits', overwrite=True)
+        #vorbintable.write(directory+filename, overwrite=True)
+        #print(vorbintable)
+
+        fig, ax=plt.subplots()
+        ax.plot(self.wave, vorbinflux[i,:])
+        fig, ax1=plt.subplots()
+        ax1.plot(self.wave, vorbinerr[i,:])
+        plt.show() 
 
 
     def pertsim(self, npoints=30, dim=3, n=3, k0=0.5, dk0=0.05 ):
@@ -724,6 +782,8 @@ def binvor_spectra(nPixels, bin_number, spectra, errors):
 
     newflux = np.zeros((len(nPixels), spectra.shape[1]))
     newerr = np.zeros((len(nPixels), spectra.shape[1]))
+
+    nbins=np.arange(min(bin_number), max(bin_number))
 
     for i, id in enumerate(bin_number):
         newflux[i] = spectra[id]

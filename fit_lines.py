@@ -148,7 +148,6 @@ if __name__ == '__main__':
                 
 
     for i in range(len(fiberid)):
-    #for i in [105, 106, 107]:
         mask = fiberid['id'] == i
         spectrum = flux[mask][0]  # select only fiber n. 200
         error = err[mask][0]
