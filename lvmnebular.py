@@ -10,9 +10,6 @@ from scipy.fft import fftn, ifftn
 import imageio
 import matplotlib.tri as tri
 from vorbin.voronoi_2d_binning import voronoi_2d_binning
-from scipy.interpolate import interp1d
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
 
 
 
@@ -62,8 +59,6 @@ class simulation:
         self.ra=None
         self.dec=None
         self.lineid=None
-        
-
         self.simfile = None
         self.linefitfile= None
         self.dim=None
@@ -84,29 +79,37 @@ class simulation:
         self.neO2err=None
         self.neS2=None
         self.neS2err=None
-        self.target_sn=None
+        
+        self.radbins=None
 
         # voronoi binning attributes
+        self.newtable=None
         self.nbins=None
         self.vorbinflux=None
         self.vorbinerr=None
         self.binid=None
+        self.target_sn=None
 
 
-    def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', bin=False):
+    def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
 
         self.datadir=datadir
         self.simname=simname
         self.exptime=exptime
 
-        if bin:
-            self.simfile=self.datadir+self.simname+'/'+self.simname+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
+        
+        if vorbin:
+            self.simfile=self.datadir+self.simname+'/'+self.simname+'_vorbinned'+'/'+self.simname+'_vorbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
+
+        if snbin:
+            self.simfile=self.datadir+self.simname+'/'+self.simname+'_snbinned'+'/'+self.simname+'_snbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
 
         else:
             self.simfile = self.datadir+self.simname+'/outputs/'+self.simname+'_linear_full_'+str(int(self.exptime))+'_flux.fits'    
 
         #read simulator output in the right path correpsonding to "name"
         print("Loading simulation: "+self.datadir+self.simname+'\n')
+        print("Loading simfile: "+self.simfile)
 
         if ( not os.path.isdir(self.datadir+self.simname)):
             raise Exception("Simulation "+self.simname+" does not exist. Run run_simulation.py first")
@@ -117,12 +120,12 @@ class simulation:
             self.flux = hdu['TARGET'].data ##2D array(no. of fibers, wave)
             self.err = hdu['ERR'].data
             self.fiberdata = Table.read(hdu['FIBERID'])
-            #print(self.fiberdata)
 
         self.nfib=len(self.fiberdata)
+        print("no.of bins:", self.nfib)
 
     
-    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , bin=False, pertsim=False, loadfile=True, plot=False):  #need to fix this for binning
+    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , radbin=False, vorbin=False, snbin=False, pertsim=False, rbinmax=250, drbin=20, loadfile=True, plot=False):  
         '''
         This function fits each line in self.lineid in the spectrum of each spaxel and measures fluxes, linewidthsm and line centers
 
@@ -130,9 +133,12 @@ class simulation:
 
         sys_vel (optional): first guess of systemic velocity of emission lines, default is sys_vel=0 (float)
         lines (optional): rest-frame wavelength of emission lines to be fitted. Default is just Ha and NII6583 (numpy array of floats)
-        bin: if True work on binned simulation spectra, if False (default) fit native simulation spectra (boolean)
+        radbin: if True work on radially binned simulation spectra, if False (default) fit native simulation spectra (boolean)
+        vorbin: if True work on voronoi binned simulation spectra, if False (default) fit native simulation spectra (boolean)
+        snbin: if True work on binned simulation spectra, if False (default) fit native simulation spectra (boolean)
         pertsim: if True work on perturbed simulation spectra, if False (default) fit native simulation spectra (boolean)
-        
+        rbinmax:max radius for binning(float, default=250)
+        drbin: no. of bins (int, default=20)
         
 
         Output:
@@ -146,28 +152,63 @@ class simulation:
         if (self.nfib == None):
             raise Exception('Simulation has not been loaded. Run loadsim first.')
         
-        self.linefitfile=self.datadir+self.simname+'/'+self.simname+'_linefits.fits'
-        
-        plotdir=self.datadir+self.simname+'/linefitplots/'
-        if (not os.path.isdir(plotdir)):
-            os.mkdir(plotdir)
+
+        if vorbin:
+            plotdir=self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir)
+            outfilename=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_linefits.fits'
+
+        elif snbin:
+            plotdir=self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir)
+            outfilename=self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_linefits.fits'
 
 
-        # pending to write logic to deal with bin
+        elif radbin:
+            self.rbinmax=rbinmax
+            self.drbin=drbin
+            self.radialbin(rbinmax, drbin, pertsim=False)
+
+            self.simfile=self.datadir+self.simname+'/'+self.simname+'_radbinned'+'/'+self.simname+'_radbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
+
+            with fits.open(self.simfile) as hdu:
+                self.header = hdu[0].header
+                self.wave = hdu['WAVE'].data ##1D array
+                self.flux = hdu['TARGET'].data ##2D array(no. of fibers, wave)
+                self.err = hdu['ERR'].data
+                self.fiberdata = Table.read(hdu['FIBERID'])
+
+            self.nfib=len(self.fiberdata)
+            print("no.of bins:", self.nfib)
+
+            plotdir=self.simname+'/'+self.simname+'_radbinned/'+'linefitplots/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir) 
+            outfilename=self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_linefits.fits'   
+
+        else:
+            plotdir=self.datadir+self.simname+'/linefitplots/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir)
+            outfilename=self.simname+'/'+self.simname+'_linefits.fits'
+
+        self.linefitfile=outfilename 
+        print("linefitfile:",self.linefitfile)
+
         wave = self.wave
         fiberid = self.fiberdata
         flux = self.flux
         err = self.err
             
-        c=299792.458 # speed of light in km/s
+        c=299792.458   #speed of light in km/s
         lines=lines0*(1+sys_vel /c)
 
         if loadfile:
             
-            
             t=Table.read(self.linefitfile)
             self.linefitdict=t
-            #print(self.linefitdict)
 
         else:
             
@@ -183,11 +224,8 @@ class simulation:
                 self.linefitdict[self.lineid[i]+'_sigma']=[]
                 self.linefitdict[self.lineid[i]+'_sigma_err']=[]
             
-
             auxnfib=self.nfib
-            if bin:
-
-                auxnfib=self.nfibbin
+            print(self.nfib)
 
             for i in range(auxnfib):                           # put a limit on auxnfib to examine fittings (ex. auxnfib<5)
                 mask = self.fiberdata['id'] == i
@@ -211,10 +249,10 @@ class simulation:
                     self.linefitdict[str(lines0[j])+'_sigma_err'].append(np.sqrt(pcov[2, 2]))
 
             self.linefitdict=Table(self.linefitdict)
-            self.linefitdict.write(self.linefitfile, overwrite=True)
-                            
+            self.linefitdict.write(outfilename, overwrite=True)
+            
 
-    def runpyneb(self, niter=4, bin=False, pertsim=False):
+    def runpyneb(self, niter=4, radbin=False, vorbin=False, pertsim=False):
 
         '''
         This function will use the line fluxes to calculate the Te, ne and errors in Te nad ne running a MonteCarlo.
@@ -286,8 +324,11 @@ class simulation:
             f3726=self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
             f3729=self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
             f7319=self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
+            f7320=self.linefitdict['7320_flux']+np.random.randn(self.nfib)*self.linefitdict['7320_flux_err']
             f7330=self.linefitdict['7330_flux']+np.random.randn(self.nfib)*self.linefitdict['7330_flux_err']
-            TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7319+f7330), den=ne, wave1=3727, wave2=7325)
+            f7331=self.linefitdict['7331_flux']+np.random.randn(self.nfib)*self.linefitdict['7331_flux_err']
+
+            TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7319+f7320+f7330+f7331), den=ne, wave1=3727, wave2=7325)
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
@@ -426,52 +467,118 @@ class simulation:
             self.flux = hdu['TARGET'].data ##2D array(no. of fibers, wave)
             self.err = hdu['ERR'].data
             self.fiberdata = Table.read(hdu['FIBERID'])
-            #print(self.fiberdata)
-
-        self.nfib=len(self.fiberdata)
 
         radius = np.sqrt(self.fiberdata['x']**2 + self.fiberdata['y']**2)
         bins = np.arange(drbin/2, rbinmax-drbin/2, drbin)
+        self.radbins=len(bins)
         nspax=np.zeros(len(bins))
         header = self.header
-        binned_fluxes = np.zeros((len(bins)-1, len(self.wave)))
-        binned_err = np.zeros((len(bins)-1, len(self.wave)))
+        radbinned_fluxes = np.zeros((len(bins)-1, len(self.wave)))
+        radbinned_err = np.zeros((len(bins)-1, len(self.wave)))
 
         newx = []
 
         for i in range(len(bins)-1):
             nflux, nerr, nsel = binrad_spectra(bins[i]-drbin, bins[i]+drbin, radius, self.flux, self.err)
             nspax[i]=nsel
-            binned_fluxes[i] = nflux
-            binned_err[i] = nerr
+            radbinned_fluxes[i] = nflux
+            radbinned_err[i] = nerr
             newx.append(bins[i])
 
         hdu_primary = fits.PrimaryHDU(header=header)
-        hdu_target = fits.ImageHDU(data=binned_fluxes, name='TARGET')
-        hdu_errors = fits.ImageHDU(data=binned_err, name='ERR')
+        hdu_target = fits.ImageHDU(data=radbinned_fluxes, name='TARGET')
+        hdu_errors = fits.ImageHDU(data=radbinned_err, name='ERR')
         hdu_wave = fits.ImageHDU(data=self.wave, name='WAVE')
         newtable = {'id': range(0, len(bins)-1),
-                    'y': np.zeros(len(bins)-1),
-                    'x': newx}
-
+                    'x': np.zeros(len(bins)-1),
+                    'y': newx}
+        
         newtable = Table(newtable)
+        self.newtable=newtable
+        
         hdu_table = fits.BinTableHDU(newtable, name='FIBERID')
         hdul = fits.HDUList([hdu_primary, hdu_target, hdu_errors, hdu_wave, hdu_table])
 
-        filename=self.simname+'_radbinned/'+self.simname+'_radbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
+        filename=self.simname+'_radbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
         directory=self.simname+'/'+self.simname+'_radbinned/'
         
         if ( not os.path.isdir(directory)):
             os.mkdir(directory)
+            
         plotdir=directory+'/linefitplots/'
         if ( not os.path.isdir(plotdir)):
            os.mkdir(plotdir)
 
-        hdul.writeto(filename, overwrite=True)
+        hdul.writeto(directory+filename, overwrite=True)
         plt.plot(bins, nspax)
+        plt.xlabel('nbins')
+        plt.ylabel('nspaxels')
         plt.show()
 
+    def sn_radialbin(self,  target_sn=100,  lineid='6563', rmin=0, rmax=250, pertsim=False):
+
+        '''
+        This function will be a 3d array which will provide us the binned line flux for each self.lineid in each spaxel.
     
+        Input:
+        targetsnr: The desired minimum snr (int; default is 100)
+        lineid: rest frame wavelength of emission lines
+
+        Output:
+        Radially binned flux, error spectrum with constant snr
+        
+        '''
+      
+        if self.linefitdict is None:
+            raise Exception('Emission lines not fit yet, run fitlines first.')
+
+        signal, noise=self.linefitdict[lineid+'_flux'], self.linefitdict[lineid+'_flux_err']
+        radius = np.sqrt(self.fiberdata['x']**2 + self.fiberdata['y']**2)
+
+        selected = np.where((radius >= rmin) & (radius < rmax))[0]
+        radius_bins=np.unique(radius[selected])
+
+        snr = signal/noise
+        snbinned_flux = np.zeros((len(self.wave), len(radius_bins)))
+        snbinned_err = np.zeros((len(self.wave), len(radius_bins)))
+        newx=[]
+
+        for i, rad in enumerate(radius_bins):
+            indices=np.where(radius[selected] == rad)[0]
+            snr_rad = snr[selected][indices]
+
+            if np.mean(snr_rad) >= target_sn:
+                snbinned_flux[:, i] = np.sum(signal[selected][indices], axis=0)
+                snbinned_err[:, i] = np.sum(noise[selected][indices], axis=0)
+                newx.append(rad)  # Add the radial value to the newx list
+
+        hdu_primary = fits.PrimaryHDU(header=self.header)
+        hdu_target = fits.ImageHDU(data=snbinned_flux, name='TARGET')
+        hdu_errors = fits.ImageHDU(data=snbinned_err, name='ERR')
+        hdu_wave = fits.ImageHDU(data=self.wave, name='WAVE')
+        newtable = {'id': range(0, len(radius_bins)-1),
+                    'x': np.zeros(len(radius_bins)-1),
+                    'y': newx}
+        
+        newtable = Table(newtable)
+        self.newtable=newtable
+        
+        hdu_table = fits.BinTableHDU(newtable, name='FIBERID')
+        hdul = fits.HDUList([hdu_primary, hdu_target, hdu_errors, hdu_wave, hdu_table])
+
+        filename=self.simname+'_snbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
+        directory=self.simname+'/'+self.simname+'_snbinned/'
+        
+        if ( not os.path.isdir(directory)):
+            os.mkdir(directory)
+            
+        plotdir=directory+'/linefitplots/'
+        if ( not os.path.isdir(plotdir)):
+           os.mkdir(plotdir)
+
+        hdul.writeto(directory+filename, overwrite=True)
+        
+ 
     def voronoibin(self, target_sn=10, lineid='6563', label='flux', plot=False):
         '''
         Input:
@@ -482,7 +589,6 @@ class simulation:
         Output:
         Binned flux, error spectrum in each spaxel.
         '''
-        self.target_sn=target_sn
 
         if self.linefitdict is None:
             raise Exception('Emission lines not fit yet, run fitlines first.')
@@ -492,69 +598,56 @@ class simulation:
 
         bin_number, x_gen, y_gen, x_bar, y_bar, sn, nPixels, scale = voronoi_2d_binning(x, y, signal, noise, target_sn, cvt=True, pixelsize=None, plot=True, quiet=True, sn_func=None, wvt=False)
         
-        nbins=len(nPixels)
-        self.nbins=nbins
+        print(len(nPixels))
 
-        vorbinflux=np.zeros((nbins, len(self.wave)))
-        vorbinerr=np.zeros((nbins, len(self.wave)))
+        self.nbins=len(nPixels)
+        vorbinflux=np.zeros((self.nbins, len(self.wave)))
+        vorbinerr=np.zeros((self.nbins, len(self.wave)))
         binid=np.unique(bin_number)
-        self.vorbinflux=vorbinflux
+        header = self.header
         
-        for i in range(nbins):
+        for i in range(self.nbins):
 
             sel=bin_number==binid[i]
             vorbinflux[i,:]=np.sum(self.flux[sel,:], axis=0)
             vorbinerr[i,:]=np.sum(self.err[sel,:], axis=0)
-       
-        self.vorbinerr=vorbinerr  
-        '''
-        vorbintable={'bin':[],
-                    'x': [],
-                    'y': [],
-                    'flux': [],
-                    'error': [],
-                    'wave': []
+            
+
+        hdu_primary = fits.PrimaryHDU(header=header)
+        hdu_target = fits.ImageHDU(data=vorbinflux, name='TARGET')
+        hdu_errors = fits.ImageHDU(data=vorbinerr, name='ERR')
+        hdu_wave = fits.ImageHDU(data=self.wave, name='WAVE')
+        newtable = {'id': range(0, self.nbins),
+                    'x': x_gen,
+                    'y': y_gen,
                     }
 
-        for i in range(nbins):
-
-            vorbintable['bin'].append(i) 
-            vorbintable['x'].append(x_gen)
-            vorbintable['y'].append(y_gen)
-            vorbintable['flux'].append(vorbinflux)
-            vorbintable['error'].append(vorbinerr)
-            vorbintable['wave'].append(self.wave)
-
-        vorbintable = Table(vorbintable)
-        vorbintable.write(filename, overwrite=True)
-        print(vorbintable)
+        newtable = Table(newtable)
+        hdu_table = fits.BinTableHDU(newtable, name='FIBERID')
+        hdul = fits.HDUList([hdu_primary, hdu_target, hdu_errors, hdu_wave, hdu_table])
+        
+        self.vorbinflux=vorbinflux
+        self.vorbinerr=vorbinerr  
 
         filename=self.simname+'_vorbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
-        directory=self.simname+'_vorbinned/'
-        
-        if ( not os.path.isdir(directory)):
-            os.mkdir(directory)
-
-        vorbintable = Table(vorbintable)
-        vorbintable.write(self.simname+'_vorbinned/'+self.simname+'_vorbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits', overwrite=True)
-        #vorbintable.write(directory+filename, overwrite=True)
-        #print(vorbintable)
-        '''
         directory=self.simname+'/'+self.simname+'_vorbinned/'
         if ( not os.path.isdir(directory)):
             os.mkdir(directory)
 
-        plotdir=directory+'/outputplots/'
+        # plotting directory storing the spectra (I think it has no importance, remove??)
+        plotdir=directory+'/vorbin_fluxplots/'
         if ( not os.path.isdir(plotdir)):
            os.mkdir(plotdir)
 
-        fig, ax=plt.subplots()
-        ax.plot(self.wave, vorbinflux[i,:], label='flux')
-        ax.plot(self.wave, vorbinerr[i,:], label='error')
-        ax.set_xlabel('wavelength $A$')
-        plt.legend()
-        plt.savefig(plotdir+'/'+lineid+'.png')
-        plt.show() 
+        hdul.writeto(directory+filename, overwrite=True)
+        
+        if plot:
+            fig, ax=plt.subplots()
+            ax.plot(self.wave, vorbinflux[i,:], label='flux')
+            ax.set_xlabel('wavelength $A$')
+            ax.set_ylabel('Flux erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$')
+            plt.savefig(plotdir+'/'+lineid+'.png')
+            plt.show() 
 
 
     def pertsim(self, npoints=30, dim=3, n=3, k0=0.5, dk0=0.05 ):
@@ -589,9 +682,9 @@ class simulation:
             for slice in new_field:
                 writer.append_data(slice)
     
-##################################################################### Plotting methods #########################################################
+##################################################################### Plotting methods ##############################################
 
-    def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', bin=False, pertsim=False):
+    def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
 
             '''
             This function will plot 1 D maps of Te, ne and error on Te and ne.
@@ -608,10 +701,27 @@ class simulation:
             Plot out maps. 
 
             '''
-            plotdir=self.datadir+self.simname+'/'+self.simname+'_plotmaps/'
-            if (not os.path.isdir(plotdir)):
-                os.mkdir(plotdir)
+            if vorbin:
+                plotdir=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_plotmap/'
+                if (not os.path.isdir(plotdir)):
+                    os.mkdir(plotdir)
 
+            elif radbin:
+                plotdir=self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_plotmap/'
+                if (not os.path.isdir(plotdir)):
+                    os.mkdir(plotdir) 
+
+            elif snbin:
+                plotdir=self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_plotmap/'
+                if (not os.path.isdir(plotdir)):
+                    os.mkdir(plotdir)    
+
+            else:
+
+                plotdir=self.datadir+self.simname+'/'+self.simname+'_plotpmap/'
+                if not (os.path.isdir(plotdir)):
+                    os.mkdir(plotdir)
+        
 
             sel=np.isfinite(z)
 
@@ -624,10 +734,10 @@ class simulation:
             ax.set_xlabel('RA')
             ax.set_ylabel('Dec')
             ax.axis('equal')
-            plt.savefig(plotdir+'/'+output+'.png')
+            plt.savefig(plotdir+'/'+output+'.png', dpi=200)
 
         
-    def plotprofile(self, z, min, max, title='line_map', output='line_map', bin=False, pertsim=False):
+    def plotprofile(self, z, min, max, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
 
         '''
         This function will plot 2 D radial profiles of Te and ne.
@@ -644,10 +754,26 @@ class simulation:
         Plot out radial profiles of Te and ne.  
         
         '''
-        
-        plotdir=self.datadir+self.simname+'/'+self.simname+'_plotprofile/'
-        if not (os.path.isdir(plotdir)):
-            os.mkdir(plotdir)
+        if vorbin:
+            plotdir=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_plotprofile/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir)
+
+        elif radbin:
+            plotdir=self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_plotprofile/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir)
+
+        elif snbin:
+            plotdir=self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_plotprofile/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir)    
+
+        else:
+
+            plotdir=self.datadir+self.simname+'/'+self.simname+'_plotprofile/'
+            if not (os.path.isdir(plotdir)):
+                os.mkdir(plotdir)
         
         sel=np.isfinite(z)      
 
@@ -661,7 +787,64 @@ class simulation:
         ax.set_ylabel(title)
         ax.set_xlabel('Radius (arcsec)')
         ax.legend()
-        plt.savefig(plotdir+'/'+output+'_rad.png')      
+        plt.savefig(plotdir+'/'+output+'_rad.png', dpi=200)      
+ 
+
+    def overplotprofile(self, z, min, max, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, vals=[], pertsim=False):
+
+        '''
+        This function will plot 2 D radial profiles of Te and ne.
+        
+        Input:
+        z: Te, ne and errors from linefitdict table (1 D array)
+        min: minimum value of z (float)
+        max: maximum value of z (float)
+        nlevels: no. of levels in maps (int)
+        title: Title of maps (str)
+        output:Output names of the plot maps. (str)
+
+        Output: 
+        Plot out radial profiles of Te and ne.  
+        
+        '''
+        if vorbin:
+            plotdir=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_overplotprofile/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir)
+
+        elif radbin:
+            plotdir=self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_overplotprofile/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir) 
+
+        elif snbin:
+            plotdir=self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_overplotprofile/'
+            if (not os.path.isdir(plotdir)):
+                os.mkdir(plotdir)    
+
+        else:
+
+            plotdir=self.datadir+self.simname+'/'+self.simname+'_overplotprofile/'
+            if not (os.path.isdir(plotdir)):
+                os.mkdir(plotdir)
+        
+        sel=np.isfinite(z)      
+
+        r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
+ 
+        #reading table to overplot true Te and ne profiles in background.
+        hdu=fits.open(self.datadir+self.simname+'/'+'testneb_tutorial3_ex1.fits')
+        vals=hdu['Comp_0_PhysParams'].data
+
+        fig, ax = plt.subplots(figsize=(8,5))
+        ax.plot(r[sel], z[sel], '.', label='data')
+        ax.plot(r, )
+        ax.set_ylim(min, max)
+        ax.set_xlim(0, 260)
+        ax.set_ylabel(title)
+        ax.set_xlabel('Radius (arcsec)')
+        ax.legend()
+        plt.savefig(plotdir+'/'+output+'_rad.png', dpi=200)      
  
 #################################################################################### Functions used in above methods #################################################################################################
 
@@ -693,7 +876,7 @@ def error_func(wave, gaussian, popt, pcov, e=1e-7):
     popt:Optimal values for the parameters (1D numpy array)
     pcov: Estimated covariance of popt (3D matrix)
 
-    Outut:
+    Output:
     standard deviation on each parameter    
     '''
     
@@ -727,7 +910,8 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=4, plot=True, plotout='linefit
     error: flux error array(1D numpy array)
     lwave: initial approximation (1D numpy array)
     
-    Outut: 
+    Output: 
+    optimal and covarience parameters, popt and pcov.
     
     ''' 
     sel=(wave>lwave-dwave/2)*(wave<lwave+dwave/2)
@@ -768,10 +952,9 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=4, plot=True, plotout='linefit
         ax.legend()
         plt.savefig(plotout+'.png')
     return popt, pcov
-#######################################################################################################################################################
+########################################################################################################################################
 
-
-################################################### Function used to bin spectra in simulations #######################################################
+################################################### Function used to bin spectra in simulations ########################################
 
 def binrad_spectra(rmin, rmax, radius, spectra, errors):
 
@@ -789,24 +972,7 @@ def binrad_spectra(rmin, rmax, radius, spectra, errors):
 
     return newflux, newerr, len(selected)
 
-def binvor_spectra(nPixels, bin_number, spectra, errors):
-
-    newflux = np.zeros((len(nPixels), spectra.shape[1]))
-    newerr = np.zeros((len(nPixels), spectra.shape[1]))
-
-    nbins=np.arange(min(bin_number), max(bin_number))
-
-    for i, id in enumerate(bin_number):
-        newflux[i] = spectra[id]
-        newerr[i] = errors[id]
-
-    newflux = newflux.sum(axis=0)
-    newerr = np.sqrt(np.sum(newerr**2, axis=0))
-
-    return newflux, newerr, len(nPixels)
-
-
-#################################################### Functions used in perturbing the simulation ######################################################
+#################################################### Functions used in perturbing the simulation ###########################################
 
 def k_vector(npoints):
     k1 = np.arange(npoints/2+1)
