@@ -11,7 +11,7 @@ import pyneb as pn
 from astropy.table import Table
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
-import sys
+
 
 
 def new_measurements(value, errs):
