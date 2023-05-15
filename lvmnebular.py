@@ -101,13 +101,12 @@ class simulation:
         if vorbin:
             self.simfile=self.datadir+self.simname+'/'+self.simname+'_vorbinned'+'/'+self.simname+'_vorbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
 
-        if snbin:
+        elif snbin:
             self.simfile=self.datadir+self.simname+'/'+self.simname+'_snbinned'+'/'+self.simname+'_snbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
 
         else:
             self.simfile = self.datadir+self.simname+'/outputs/'+self.simname+'_linear_full_'+str(int(self.exptime))+'_flux.fits'    
 
-        #read simulator output in the right path correpsonding to "name"
         print("Loading simulation: "+self.datadir+self.simname+'\n')
         print("Loading simfile: "+self.simfile)
 

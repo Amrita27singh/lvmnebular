@@ -1,4 +1,4 @@
-*.fits
+/*.fits
 ./*/*.fits
 ./*/outputs/*.fits
 ./*/linefitplots/*.png
