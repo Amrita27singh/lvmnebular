@@ -1,4 +1,7 @@
-Bubble_v2_1e-10_binned_900_flux.fits
-Bubble_v2_1e-10/linefitplots
+*.fits
+./*/*.fits
+./*/outputs/*.fits
+./*/linefitplots/*.png
+./*/plotprofiles/*.png
 1
 Testing_Truevals.ipynb
