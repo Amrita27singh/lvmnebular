@@ -125,7 +125,7 @@ class simulation:
         self.nfib=len(self.fiberdata)
         print("no.of bins:", self.nfib)
 
-        #reading table to overplot true Te and ne profiles in background.
+        #reading True Te and ne values to overplot with Te and ne profiles in background.
         hdu=fits.open(self.datadir+self.simname+'/'+'testneb_tutorial3_ex1.fits')
         vals=hdu['Comp_0_PhysParams'].data
         self.vals=vals
@@ -850,7 +850,7 @@ class simulation:
         ax.plot(self.vals[0], vals, c='grey')
         ax.set_ylim(min, max)
         ax.set_ylabel(title)
-        ax.set_xlabel('Radius (parsec)',)
+        ax.set_xlabel('Radius (parsec)')
         ax.legend()
         plt.savefig(plotdir+'/'+output+'_rad.png', dpi=300)      
  
