@@ -4,6 +4,10 @@ Created on Thu Aug  4 19:08:35 2022
 
 @author: amrita
 """
+import sys
+sys.path.append('home/amrita/lvmdatasimulator/')
+
+from lvmdatasimulator import *
 
 from lvmdatasimulator.field import LVMField
 from lvmdatasimulator.observation import Observation
@@ -17,7 +21,7 @@ from astropy.io import fits
 from astropy.visualization import ImageNormalize, PercentileInterval, AsinhStretch, LinearStretch
 from matplotlib import pyplot as plt
 from astropy.table import Table
-import sys
+
 
 tel = LVM160()
 spec = LinearSpectrograph()
