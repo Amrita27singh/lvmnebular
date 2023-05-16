@@ -90,6 +90,8 @@ class simulation:
         self.binid=None
         self.target_sn=None
 
+        self.vals=None
+
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
 
@@ -122,6 +124,11 @@ class simulation:
 
         self.nfib=len(self.fiberdata)
         print("no.of bins:", self.nfib)
+
+        #reading table to overplot true Te and ne profiles in background.
+        hdu=fits.open(self.datadir+self.simname+'/'+'testneb_tutorial3_ex1.fits')
+        vals=hdu['Comp_0_PhysParams'].data
+        self.vals=vals
 
     
     def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , radbin=False, vorbin=False, snbin=False, pertsim=False, rbinmax=250, drbin=20, loadfile=True, plot=False):  
@@ -753,6 +760,8 @@ class simulation:
         Plot out radial profiles of Te and ne.  
         
         '''
+        distance=16000 #u.pc
+
         if vorbin:
             plotdir=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_plotprofile/'
             if (not os.path.isdir(plotdir)):
@@ -777,19 +786,20 @@ class simulation:
         sel=np.isfinite(z)      
 
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
+        
+        rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
 
         fig, ax = plt.subplots(figsize=(8,5))
-        ax.plot(r[sel], z[sel], '.', label='data')
+        ax.plot(rad, z[sel], '.', label='data')
 
         ax.set_ylim(min, max)
-        ax.set_xlim(0, 260)
         ax.set_ylabel(title)
-        ax.set_xlabel('Radius (arcsec)')
+        ax.set_xlabel('Radius (parsec)')
         ax.legend()
         plt.savefig(plotdir+'/'+output+'_rad.png', dpi=200)      
  
 
-    def overplotprofile(self, z, min, max, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, vals=[], pertsim=False):
+    def overplotprofile(self, z, vals, min, max, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
 
         '''
         This function will plot 2 D radial profiles of Te and ne.
@@ -806,6 +816,8 @@ class simulation:
         Plot out radial profiles of Te and ne.  
         
         '''
+        distance=16000 #u.pc
+
         if vorbin:
             plotdir=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_overplotprofile/'
             if (not os.path.isdir(plotdir)):
@@ -830,20 +842,17 @@ class simulation:
         sel=np.isfinite(z)      
 
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
- 
-        #reading table to overplot true Te and ne profiles in background.
-        hdu=fits.open(self.datadir+self.simname+'/'+'testneb_tutorial3_ex1.fits')
-        vals=hdu['Comp_0_PhysParams'].data
+        
+        rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
 
         fig, ax = plt.subplots(figsize=(8,5))
-        ax.plot(r[sel], z[sel], '.', label='data')
-        ax.plot(r, )
+        ax.plot(rad, z[sel], '.', label='data')
+        ax.plot(self.vals[0], vals, c='grey')
         ax.set_ylim(min, max)
-        ax.set_xlim(0, 260)
         ax.set_ylabel(title)
-        ax.set_xlabel('Radius (arcsec)')
+        ax.set_xlabel('Radius (parsec)',)
         ax.legend()
-        plt.savefig(plotdir+'/'+output+'_rad.png', dpi=200)      
+        plt.savefig(plotdir+'/'+output+'_rad.png', dpi=300)      
  
 #################################################################################### Functions used in above methods #################################################################################################
 
