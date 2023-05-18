@@ -538,6 +538,9 @@ class simulation:
         if self.linefitdict is None:
             raise Exception('Emission lines not fit yet, run fitlines first.')
 
+        rbin= np.array([])
+        snbin= np.array([])
+
         signal, noise=self.linefitdict[lineid+'_flux'], self.linefitdict[lineid+'_flux_err']
         radius = np.sqrt(self.fiberdata['x']**2 + self.fiberdata['y']**2)
 
@@ -553,7 +556,9 @@ class simulation:
             indices=np.where(radius[selected] == rad)[0]
             snr_rad = snr[selected][indices]
 
-            if np.mean(snr_rad) >= target_sn:
+            if snr_rad >= target_sn:
+                rbin[i]+=radius_bins[rad]
+                snbin[i]+=snr_rad[rad]
                 snbinned_flux[:, i] = np.sum(signal[selected][indices], axis=0)
                 snbinned_err[:, i] = np.sum(noise[selected][indices], axis=0)
                 newx.append(rad)  # Add the radial value to the newx list

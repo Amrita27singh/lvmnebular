@@ -1,8 +1,21 @@
+
+#ignoring all the output fits
 /*.fits
+
 ./*/*.fits
+
+#diffrent exposure time output files
 ./*/outputs/*.fits
+
+#lines fit plots outputs after fitting the lines of the spectrum
 ./*/linefitplots/*.png
+
+#all the radial Te and ne profiles
 ./*/plotprofiles/*.png
+
+
 1
+
+#ignoring all the simulations stored for analysis
 Bubble*
 
