@@ -18,6 +18,8 @@ from astropy.table import Table
 hdu=fits.open('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/testneb_tutorial3_ex1.fits')
 vals=hdu['Comp_0_PhysParams'].data
 
+
+### Te vs R(pc)
 fig, ax3=plt.subplots()
 ax3.plot(vals[0], vals[1], label='True Te')
 ax3.set_xlabel('Radius(pc)')
@@ -26,6 +28,8 @@ ax3.set_title('True Te radial variation')
 plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_plotprofile/Te vs R.png', dpi=300)
 plt.show()
 
+
+### ne vs R(pc) 
 fig, ax4=plt.subplots()
 ax4.plot(vals[0], vals[2], label='True ne')
 ax4.set_xlabel('Radius(pc)')
@@ -34,8 +38,19 @@ ax4.set_title('True ne radial variation')
 plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_plotprofile/ne vs R.png', dpi=300)
 plt.show()
 
-fig, ax=plt.subplots()
 
+### Te vs ne
+fig, ax5=plt.subplots()
+ax5.plot(vals[2], vals[1], label='Te_vs_ne')
+ax5.set_xlabel('ne (cm^-3)')
+ax5.set_ylabel('Te (K)')
+ax5.set_title('True Te vs ne variation')
+plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_plotprofile/Te vs ne.png', dpi=300)
+plt.show()
+
+
+### Te(O) vs R(pc)
+fig, ax=plt.subplots()
 ax.plot(vals[0], vals[3], label='H+', color='black')
 ax.plot(vals[0], vals[4], label='O0', color='black', linestyle='--')
 ax.plot(vals[0], vals[5], linestyle='-', label='O+', color='red')
@@ -49,8 +64,9 @@ ax.set_ylabel('Ionic abundance')
 plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_plotprofile/nO vs R.png', dpi=300)
 plt.show()
 
-fig, ax1=plt.subplots()
 
+### Te(N) vs R(pc)
+fig, ax1=plt.subplots()
 ax1.plot(vals[0], vals[3], label='H+', color='black')
 ax1.plot(vals[0], vals[7], label='N0', color='black', linestyle='--')
 ax1.plot(vals[0], vals[8], linestyle='-', label='N+', color='red')
@@ -64,9 +80,8 @@ ax1.set_ylabel('Ionic abundance')
 plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_plotprofile/nN vs R.png', dpi=300)
 plt.show()
 
-
+### Te(S) vs R(pc)
 fig, ax2=plt.subplots()
-
 ax2.plot(vals[0], vals[3], label='H+', color='black')
 ax2.plot(vals[0], vals[10], label='S0', color='black', linestyle='--')
 ax2.plot(vals[0], vals[11], linestyle='-', label='S+', color='red')

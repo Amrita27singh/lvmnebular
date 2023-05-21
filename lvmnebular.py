@@ -91,6 +91,8 @@ class simulation:
         self.target_sn=None
 
         self.vals=None
+        self.rbin=None
+        self.snbin=None
 
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
@@ -258,7 +260,7 @@ class simulation:
             self.linefitdict.write(outfilename, overwrite=True)
             
 
-    def runpyneb(self, niter=4, radbin=False, vorbin=False, pertsim=False):
+    def runpyneb(self, niter=4, radbin=False, vorbin=False, snbin=False, pertsim=False):
 
         '''
         This function will use the line fluxes to calculate the Te, ne and errors in Te nad ne running a MonteCarlo.
@@ -532,9 +534,8 @@ class simulation:
 
         Output:
         Radially binned flux, error spectrum with constant snr
-        
         '''
-      
+
         if self.linefitdict is None:
             raise Exception('Emission lines not fit yet, run fitlines first.')
 
@@ -548,6 +549,8 @@ class simulation:
         radius_bins=np.unique(radius[selected])
 
         snr = signal/noise
+        #print(radius, radius_bins, len(radius), len(radius_bins),len(snr))
+
         snbinned_flux = np.zeros((len(self.wave), len(radius_bins)))
         snbinned_err = np.zeros((len(self.wave), len(radius_bins)))
         newx=[]
@@ -556,20 +559,27 @@ class simulation:
             indices=np.where(radius[selected] == rad)[0]
             snr_rad = snr[selected][indices]
 
-            if snr_rad >= target_sn:
-                rbin[i]+=radius_bins[rad]
-                snbin[i]+=snr_rad[rad]
+            while(snr_rad[i] >= target_sn):
+                rbin = np.append(rbin, radius_bins[i])
+                snbin = np.append(snbin, snr_rad[i])
                 snbinned_flux[:, i] = np.sum(signal[selected][indices], axis=0)
                 snbinned_err[:, i] = np.sum(noise[selected][indices], axis=0)
-                newx.append(rad)  # Add the radial value to the newx list
+                newx.append(rad)
+                i += 1
 
+            
+
+            if (snr_rad[i] < target_sn):
+                i += 1
+            
+        
         hdu_primary = fits.PrimaryHDU(header=self.header)
         hdu_target = fits.ImageHDU(data=snbinned_flux, name='TARGET')
         hdu_errors = fits.ImageHDU(data=snbinned_err, name='ERR')
         hdu_wave = fits.ImageHDU(data=self.wave, name='WAVE')
-        newtable = {'id': range(0, len(radius_bins)-1),
-                    'x': np.zeros(len(radius_bins)-1),
-                    'y': newx}
+        newtable = {'id': range(len(radius_bins)),
+                    'x': np.zeros(len(radius_bins)),
+                    'y': np.zeros(len(radius_bins))}
         
         newtable = Table(newtable)
         self.newtable=newtable
@@ -586,9 +596,9 @@ class simulation:
         plotdir=directory+'/linefitplots/'
         if ( not os.path.isdir(plotdir)):
            os.mkdir(plotdir)
-
+        print(len(rbin), len(snbin))
         hdul.writeto(directory+filename, overwrite=True)
-        
+          
  
     def voronoibin(self, target_sn=10, lineid='6563', label='flux', plot=False):
         '''
