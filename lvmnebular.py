@@ -539,47 +539,40 @@ class simulation:
         if self.linefitdict is None:
             raise Exception('Emission lines not fit yet, run fitlines first.')
 
-        rbin= np.array([])
+        rbinleft= np.array([0])
+        rbinright= np.array([])
         snbin= np.array([])
 
         signal, noise=self.linefitdict[lineid+'_flux'], self.linefitdict[lineid+'_flux_err']
         radius = np.sqrt(self.fiberdata['x']**2 + self.fiberdata['y']**2)
 
         selected = np.where((radius >= rmin) & (radius < rmax))[0]
-        radius_bins=np.unique(radius[selected])
+        radius_unique=np.unique(radius[selected])
 
-        snr = signal/noise
-        #print(radius, radius_bins, len(radius), len(radius_bins),len(snr))
-
-        snbinned_flux = np.zeros((len(self.wave), len(radius_bins)))
-        snbinned_err = np.zeros((len(self.wave), len(radius_bins)))
+        snbinned_flux = np.zeros((len(self.wave), len(radius_unique)))
+        snbinned_err = np.zeros((len(self.wave), len(radius_unique)))
         newx=[]
 
-        for i, rad in enumerate(radius_bins):
-            indices=np.where(radius[selected] == rad)[0]
-            snr_rad = snr[selected][indices]
+        for i, rad in enumerate(radius_unique):
+            indices=np.where((radius[selected] > rbinleft[-1])*(radius[selected] <= rad))[0]
+            snr_rad = np.sum(signal[selected][indices])/np.sqrt(np.sum(noise[selecte][indices]**2))
 
-            while(snr_rad[i] >= target_sn):
-                rbin = np.append(rbin, radius_bins[i])
-                snbin = np.append(snbin, snr_rad[i])
+            if (snr_rad >= target_sn):
+                rbinright = np.append(rbinright, rad)
+                rbinleft = np.append(rbinleft, rad)
+                snbin = np.append(snbin, snr_rad)
                 snbinned_flux[:, i] = np.sum(signal[selected][indices], axis=0)
-                snbinned_err[:, i] = np.sum(noise[selected][indices], axis=0)
+                snbinned_err[:, i] = np.sqrt(np.sum(noise[selected][indices]**2, axis=0))
                 newx.append(rad)
-                i += 1
 
-            
-
-            if (snr_rad[i] < target_sn):
-                i += 1
-            
         
         hdu_primary = fits.PrimaryHDU(header=self.header)
         hdu_target = fits.ImageHDU(data=snbinned_flux, name='TARGET')
         hdu_errors = fits.ImageHDU(data=snbinned_err, name='ERR')
         hdu_wave = fits.ImageHDU(data=self.wave, name='WAVE')
-        newtable = {'id': range(len(radius_bins)),
-                    'x': np.zeros(len(radius_bins)),
-                    'y': np.zeros(len(radius_bins))}
+        newtable = {'id': range(len(radius_unique)),
+                    'x': np.zeros(len(radius_unique)),
+                    'y': np.zeros(len(radius_unique))}
         
         newtable = Table(newtable)
         self.newtable=newtable
