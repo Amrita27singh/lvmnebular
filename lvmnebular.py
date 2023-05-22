@@ -523,7 +523,7 @@ class simulation:
         plt.ylabel('nspaxels')
         plt.show()
 
-    def sn_radialbin(self,  target_sn=100,  lineid='6563', rmin=0, rmax=250, pertsim=False):
+    def sn_radialbin(self,  target_sn=100,  lineid='6563', rmin=0, rmax=18, pertsim=False):
 
         '''
         This function will be a 3d array which will provide us the binned line flux for each self.lineid in each spaxel.
@@ -549,13 +549,14 @@ class simulation:
         selected = np.where((radius >= rmin) & (radius < rmax))[0]
         radius_unique=np.unique(radius[selected])
 
-        snbinned_flux = np.zeros((len(self.wave), len(radius_unique)))
-        snbinned_err = np.zeros((len(self.wave), len(radius_unique)))
+        snbinned_flux = np.zeros((len(radius_unique), len(self.wave)))
+        snbinned_err = np.zeros((len(radius_unique),  len(self.wave)))
         newx=[]
+        print(np.shape(snbinned_flux))
 
         for i, rad in enumerate(radius_unique):
             indices=np.where((radius[selected] > rbinleft[-1])*(radius[selected] <= rad))[0]
-            snr_rad = np.sum(signal[selected][indices])/np.sqrt(np.sum(noise[selecte][indices]**2))
+            snr_rad = np.sum(signal[selected][indices])/np.sqrt(np.sum(noise[selected][indices]**2))
 
             if (snr_rad >= target_sn):
                 rbinright = np.append(rbinright, rad)
@@ -564,8 +565,7 @@ class simulation:
                 snbinned_flux[:, i] = np.sum(signal[selected][indices], axis=0)
                 snbinned_err[:, i] = np.sqrt(np.sum(noise[selected][indices]**2, axis=0))
                 newx.append(rad)
-
-        
+           
         hdu_primary = fits.PrimaryHDU(header=self.header)
         hdu_target = fits.ImageHDU(data=snbinned_flux, name='TARGET')
         hdu_errors = fits.ImageHDU(data=snbinned_err, name='ERR')
@@ -589,7 +589,10 @@ class simulation:
         plotdir=directory+'/linefitplots/'
         if ( not os.path.isdir(plotdir)):
            os.mkdir(plotdir)
-        print(len(rbin), len(snbin))
+           
+        plt.plot(rbinright, snbin)
+        plt.xlabel('rbinright')
+        plt.ylabel('sbin')
         hdul.writeto(directory+filename, overwrite=True)
           
  
