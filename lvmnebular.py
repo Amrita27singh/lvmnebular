@@ -336,7 +336,8 @@ class simulation:
             f7330=self.linefitdict['7330_flux']+np.random.randn(self.nfib)*self.linefitdict['7330_flux_err']
             f7331=self.linefitdict['7331_flux']+np.random.randn(self.nfib)*self.linefitdict['7331_flux_err']
 
-            TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7319+f7320+f7330+f7331), den=ne, wave1=3727, wave2=7325)
+            #TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7319+f7320+f7330+f7331), den=ne, wave1=3727, wave2=7325)
+            TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7320+f7330), den=ne, wave1=3727, wave2=7325)
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
@@ -992,7 +993,7 @@ def binrad_spectra(rmin, rmax, radius, spectra, errors):
 
     return newflux, newerr, len(selected)
 
-#################################################### Functions used in perturbing the simulation ###########################################
+################################################# Functions used in perturbing the simulation ###########################################
 
 def k_vector(npoints):
     k1 = np.arange(npoints/2+1)
