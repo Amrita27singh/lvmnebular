@@ -858,7 +858,8 @@ class simulation:
 
         fig, ax = plt.subplots(figsize=(8,5))
         ax.plot(rad, z[sel], '.', label='data')
-        ax.plot(self.vals[0], vals, c='grey')
+        ax.plot(self.vals[0], vals, c='grey', label='True Te profile')
+        ax.axvline(x=18, c='red', linestyle='--', label='Strömgren radius')  # a constant vertical line
         ax.set_ylim(min, max)
         ax.set_ylabel(title)
         ax.set_xlabel('Radius (parsec)')
