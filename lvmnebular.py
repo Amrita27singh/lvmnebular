@@ -556,6 +556,7 @@ class simulation:
         snbinned_err = np.zeros((len(radius_unique),  len(self.wave)))
         newx=[]
         
+        cnt=0
         for i, rad in enumerate(radius_unique):
             indices=(radius > rbinleft[-1])*(radius <= rad)*selected  #checking all three conditions
             snr_rad = np.sum(signal[indices])/np.sqrt(np.sum(noise[indices]**2))
@@ -565,12 +566,24 @@ class simulation:
                 rbinleft = np.append(rbinleft, rad)
                 snbin = np.append(snbin, snr_rad)
                 npix=np.append(npix, indices.sum())
-                snbinned_flux[i, :] = np.sum(self.flux[indices, :], axis=0)
-                snbinned_err[i, :] = np.sum(self.err[indices, :], axis=0)
+                snbinned_flux[cnt, :] = np.sum(self.flux[indices, :], axis=0)
+                snbinned_err[cnt, :] = np.sum(self.err[indices, :], axis=0)
                 newx.append(rad)
+                cnt=cnt+1
+                print(cnt)
 
-            self.snbinned_flux=snbinned_flux
-            self.snbinned_err=snbinned_err
+
+        print("GB TEST")
+        print(np.shape(snbinned_flux))
+        snbinned_flux=snbinned_flux[0:cnt,:]
+        snbinned_err=snbinned_err[0:cnt,:]
+        print(np.shape(snbinned_flux))
+
+
+        self.snbinned_flux=snbinned_flux
+        self.snbinned_err=snbinned_err
+
+        
 
         hdu_primary = fits.PrimaryHDU(header=self.header)
         hdu_target = fits.ImageHDU(data=snbinned_flux, name='TARGET')
@@ -597,7 +610,7 @@ class simulation:
            os.mkdir(plotdir)
 
         # printing values
-        print(len(indices), rbinright, len(rbinright), len(rbinleft), len(snbin), npix, len(npix))
+        print(len(indices), rbinright, len(rbinright), len(rbinleft), len(snbin), npix, len(npix), indices)
 
         plt.plot(rbinright, snbin)
         plt.xlabel('rbinright')
