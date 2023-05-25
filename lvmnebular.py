@@ -90,9 +90,12 @@ class simulation:
         self.binid=None
         self.target_sn=None
 
+        #sn_radial binning attributes
         self.vals=None
         self.rbin=None
         self.snbin=None
+        self.snbinned_flux=None
+        self.snbinned_err=None
 
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
@@ -260,7 +263,7 @@ class simulation:
             self.linefitdict.write(outfilename, overwrite=True)
             
 
-    def runpyneb(self, niter=4, radbin=False, vorbin=False, snbin=False, pertsim=False):
+    def runpyneb(self, niter=4, pertsim=False):
 
         '''
         This function will use the line fluxes to calculate the Te, ne and errors in Te nad ne running a MonteCarlo.
@@ -324,20 +327,19 @@ class simulation:
         ############################################################## Electron Temperature diagnostics ##############################################################
 
 
-        # TO2 temperature diagnostic #################(eduardo suggested trying blending 7319, 7320, 7330 and 7331 lines)#####################
+        # TO2 temperature diagnostic
         ne=100
         TO2=np.zeros((self.nfib, niter))
         for i in range (niter):
 
             f3726=self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
             f3729=self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
-            f7319=self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
+            #f7319=self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
             f7320=self.linefitdict['7320_flux']+np.random.randn(self.nfib)*self.linefitdict['7320_flux_err']
-            f7330=self.linefitdict['7330_flux']+np.random.randn(self.nfib)*self.linefitdict['7330_flux_err']
+            #f7330=self.linefitdict['7330_flux']+np.random.randn(self.nfib)*self.linefitdict['7330_flux_err']
             f7331=self.linefitdict['7331_flux']+np.random.randn(self.nfib)*self.linefitdict['7331_flux_err']
 
-            #TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7319+f7320+f7330+f7331), den=ne, wave1=3727, wave2=7325)
-            TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7320+f7330), den=ne, wave1=3727, wave2=7325)
+            TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7320+f7331), den=ne, wave1=3727, wave2=7325)
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
@@ -524,7 +526,7 @@ class simulation:
         plt.ylabel('nspaxels')
         plt.show()
 
-    def sn_radialbin(self,  target_sn=100,  lineid='6563', rmin=0, rmax=18, pertsim=False):
+    def sn_radialbin(self,  target_sn=100,  lineid='6563', rmin=0, rmax=240, pertsim=False):
 
         '''
         This function will be a 3d array which will provide us the binned line flux for each self.lineid in each spaxel.
@@ -536,44 +538,50 @@ class simulation:
         Output:
         Radially binned flux, error spectrum with constant snr
         '''
-
         if self.linefitdict is None:
             raise Exception('Emission lines not fit yet, run fitlines first.')
 
         rbinleft= np.array([0])
         rbinright= np.array([])
         snbin= np.array([])
+        npix=np.array([])
 
         signal, noise=self.linefitdict[lineid+'_flux'], self.linefitdict[lineid+'_flux_err']
         radius = np.sqrt(self.fiberdata['x']**2 + self.fiberdata['y']**2)
 
-        selected = np.where((radius >= rmin) & (radius < rmax))[0]
+        selected = (radius >= rmin)*(radius < rmax)
         radius_unique=np.unique(radius[selected])
 
         snbinned_flux = np.zeros((len(radius_unique), len(self.wave)))
         snbinned_err = np.zeros((len(radius_unique),  len(self.wave)))
         newx=[]
         print(np.shape(snbinned_flux))
+        print(len(signal), len(noise))
 
         for i, rad in enumerate(radius_unique):
-            indices=np.where((radius[selected] > rbinleft[-1])*(radius[selected] <= rad))[0]
-            snr_rad = np.sum(signal[selected][indices])/np.sqrt(np.sum(noise[selected][indices]**2))
+            indices=(radius > rbinleft[-1])*(radius <= rad)*selected
+            snr_rad = np.sum(signal[indices])/np.sqrt(np.sum(noise[indices]**2))
 
             if (snr_rad >= target_sn):
                 rbinright = np.append(rbinright, rad)
                 rbinleft = np.append(rbinleft, rad)
                 snbin = np.append(snbin, snr_rad)
-                snbinned_flux[:, i] = np.sum(signal[selected][indices], axis=0)
-                snbinned_err[:, i] = np.sqrt(np.sum(noise[selected][indices]**2, axis=0))
+                npix=np.append(npix, indices.sum())
+                snbinned_flux[i, :] = np.sum(self.flux[indices, :], axis=0)
+                snbinned_err[i, :] = np.sum(self.err[indices, :], axis=0)
                 newx.append(rad)
-           
+
+            self.snbinned_flux=snbinned_flux
+            self.snbinned_err=snbinned_err
+
+        radius_unique=len(snbinned_flux)
         hdu_primary = fits.PrimaryHDU(header=self.header)
         hdu_target = fits.ImageHDU(data=snbinned_flux, name='TARGET')
         hdu_errors = fits.ImageHDU(data=snbinned_err, name='ERR')
         hdu_wave = fits.ImageHDU(data=self.wave, name='WAVE')
-        newtable = {'id': range(len(radius_unique)),
-                    'x': np.zeros(len(radius_unique)),
-                    'y': np.zeros(len(radius_unique))}
+        newtable = {'id': range(len(snbinned_flux)),
+                    'x': np.zeros(len(snbinned_flux)),
+                    'y': np.zeros(len(snbinned_flux))}
         
         newtable = Table(newtable)
         self.newtable=newtable
@@ -591,9 +599,12 @@ class simulation:
         if ( not os.path.isdir(plotdir)):
            os.mkdir(plotdir)
            
+        # printing values
+        print(rbinright, len(rbinright), rbinleft, snbin, npix, len(npix))
+
         plt.plot(rbinright, snbin)
         plt.xlabel('rbinright')
-        plt.ylabel('sbin')
+        plt.ylabel('snbin')
         hdul.writeto(directory+filename, overwrite=True)
           
  
@@ -859,7 +870,7 @@ class simulation:
 
         fig, ax = plt.subplots(figsize=(8,5))
         ax.plot(rad, z[sel], '.', label='data')
-        ax.plot(self.vals[0], vals, c='grey', label='True Te profile')
+        ax.plot(self.vals[0], vals, c='grey', label='True profile')
         ax.axvline(x=18, c='red', linestyle='--', label='Strömgren radius')  # a constant vertical line
         ax.set_ylim(min, max)
         ax.set_ylabel(title)
@@ -886,6 +897,7 @@ def gaussian(wave,flux,mean,sd):
     '''
     return flux/(np.sqrt(2*np.pi)*sd)*np.exp((wave-mean)**2/(-2*sd**2))
 
+
 def error_func(wave, gaussian, popt, pcov, e=1e-7):
     
     '''
@@ -902,22 +914,18 @@ def error_func(wave, gaussian, popt, pcov, e=1e-7):
     '''
     
     f0=gaussian(wave, popt[0], popt[1], popt[2])
-    
+
     dfdx=(gaussian(wave, popt[0]*(1+e), popt[1], popt[2])-f0)/(popt[0]*e)
     dfdy=(gaussian(wave, popt[0], popt[1]*(1+e), popt[2])-f0)/(popt[1]*e)
     dfdz=(gaussian(wave, popt[0], popt[1],popt[2]*(1+e))-f0)/(popt[2]*e)
-    
     df=(dfdx, dfdy, dfdz) 
-
     dx=df[0]**2*pcov[0][0]
     dy=df[1]**2*pcov[1][1]
     dz=df[2]**2*pcov[2][2]
     dxdy=df[0]*df[1]*pcov[1][0]
     dxdz=df[0]*df[2]*pcov[2][0]
     dydz=df[1]*df[2]*pcov[2][1]
-    
     var=dx+ dy + dz + 2*(dxdy + dxdz + dydz)
-
     sigma=np.sqrt(var)
     return sigma
 
@@ -941,35 +949,26 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=4, plot=True, plotout='linefit
 
     try: 
         popt, pcov=curve_fit(gaussian, wave[sel], spectrum[sel], sigma=error[sel], p0=p0, absolute_sigma=True, bounds=((0,lwave-1.0,0.3),(np.inf,lwave+1.0,2.0)))
-
     except RuntimeError: 
         popt=np.array([-99, p0[1], p0[2]])
         pcov=np.zeros((3,3))
         pcov[0,0]=np.sum(error[sel]**2)
-
     if plot==True:
         xm=np.arange(wave[sel][0], wave[sel][-1], 0.01)
-
         sigma = error_func(xm, gaussian, popt, pcov)
-
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.errorbar(wave, spectrum, error, c='k', label='data')
         ax.scatter(wave[sel], spectrum[sel], c='b', label='data')
         ax.plot(wave[sel], spectrum[sel], c='b', label='masked data')
-
         ax.set_xlim(lwave-dwave, lwave+dwave)
-        
         ym = gaussian(xm, popt[0], popt[1], popt[2])
         ax.plot(xm, ym, c='r', label='model')
         ax.fill_between(xm, ym+3*sigma, np.max([ym-ym,ym-3*sigma], axis=0), alpha=0.7, 
                     linewidth=3, label='error limits')
-        
         ax.set_ylim(-0.4*spectrum[sel].max(),1.7*np.max([spectrum[sel].max(), (ym+3*sigma).max()]))
         plt.ylabel("Flux, erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$")
         plt.xlabel("wavelength, $\AA$")
-
-        
         ax.legend()
         plt.savefig(plotout+'.png')
     return popt, pcov
@@ -979,19 +978,19 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=4, plot=True, plotout='linefit
 
 def binrad_spectra(rmin, rmax, radius, spectra, errors):
 
-    selected = np.where((radius >= rmin) & (radius < rmax))[0]
+    sel = np.where((radius >= rmin) & (radius < rmax))[0]
 
-    newflux = np.zeros((len(selected), spectra.shape[1]))
-    newerr = np.zeros((len(selected), spectra.shape[1]))
+    newflux = np.zeros((len(sel), spectra.shape[1]))
+    newerr = np.zeros((len(sel), spectra.shape[1]))
 
-    for i, id in enumerate(selected):
+    for i, id in enumerate(sel):
         newflux[i] = spectra[id]
         newerr[i] = errors[id]
 
     newflux = newflux.sum(axis=0)
     newerr = np.sqrt(np.sum(newerr**2, axis=0))
 
-    return newflux, newerr, len(selected)
+    return newflux, newerr, len(sel)
 
 ################################################# Functions used in perturbing the simulation ###########################################
 
