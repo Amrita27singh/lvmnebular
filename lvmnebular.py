@@ -526,7 +526,7 @@ class simulation:
         plt.ylabel('nspaxels')
         plt.show()
 
-    def sn_radialbin(self,  target_sn=100,  lineid='6563', rmin=0, rmax=240, pertsim=False):
+    def sn_radialbin(self,  target_sn=100,  lineid='6563', rmin=0, rmax=250, pertsim=False):
 
         '''
         This function will be a 3d array which will provide us the binned line flux for each self.lineid in each spaxel.
@@ -555,11 +555,9 @@ class simulation:
         snbinned_flux = np.zeros((len(radius_unique), len(self.wave)))
         snbinned_err = np.zeros((len(radius_unique),  len(self.wave)))
         newx=[]
-        print(np.shape(snbinned_flux))
-        print(len(signal), len(noise))
-
+        
         for i, rad in enumerate(radius_unique):
-            indices=(radius > rbinleft[-1])*(radius <= rad)*selected
+            indices=(radius > rbinleft[-1])*(radius <= rad)*selected  #checking all three conditions
             snr_rad = np.sum(signal[indices])/np.sqrt(np.sum(noise[indices]**2))
 
             if (snr_rad >= target_sn):
@@ -574,7 +572,6 @@ class simulation:
             self.snbinned_flux=snbinned_flux
             self.snbinned_err=snbinned_err
 
-        radius_unique=len(snbinned_flux)
         hdu_primary = fits.PrimaryHDU(header=self.header)
         hdu_target = fits.ImageHDU(data=snbinned_flux, name='TARGET')
         hdu_errors = fits.ImageHDU(data=snbinned_err, name='ERR')
@@ -592,15 +589,15 @@ class simulation:
         filename=self.simname+'_snbinned'+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
         directory=self.simname+'/'+self.simname+'_snbinned/'
         
-        if ( not os.path.isdir(directory)):
+        if (not os.path.isdir(directory)):
             os.mkdir(directory)
             
         plotdir=directory+'/linefitplots/'
         if ( not os.path.isdir(plotdir)):
            os.mkdir(plotdir)
-           
+
         # printing values
-        print(rbinright, len(rbinright), rbinleft, snbin, npix, len(npix))
+        print(len(indices), rbinright, len(rbinright), len(rbinleft), len(snbin), npix, len(npix))
 
         plt.plot(rbinright, snbin)
         plt.xlabel('rbinright')
@@ -640,8 +637,9 @@ class simulation:
             sel=bin_number==binid[i]
             vorbinflux[i,:]=np.sum(self.flux[sel,:], axis=0)
             vorbinerr[i,:]=np.sum(self.err[sel,:], axis=0)
-            
 
+        print(vorbinflux)
+            
         hdu_primary = fits.PrimaryHDU(header=header)
         hdu_target = fits.ImageHDU(data=vorbinflux, name='TARGET')
         hdu_errors = fits.ImageHDU(data=vorbinerr, name='ERR')
@@ -663,7 +661,7 @@ class simulation:
         if ( not os.path.isdir(directory)):
             os.mkdir(directory)
 
-        # plotting directory storing the spectra (I think it has no importance, remove??)
+        # plotting directory storing the spectra (I think these plots aren't important, remove??)
         plotdir=directory+'/vorbin_fluxplots/'
         if ( not os.path.isdir(plotdir)):
            os.mkdir(plotdir)
