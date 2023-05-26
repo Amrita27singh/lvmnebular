@@ -96,6 +96,8 @@ class simulation:
         self.snbin=None
         self.snbinned_flux=None
         self.snbinned_err=None
+        self.rbinright=None
+        self.rbinleft=None
 
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
@@ -579,10 +581,10 @@ class simulation:
         snbinned_err=snbinned_err[0:cnt,:]
         print(np.shape(snbinned_flux))
 
-
         self.snbinned_flux=snbinned_flux
         self.snbinned_err=snbinned_err
-
+        self.rbinright=rbinright
+        self.rbinleft=rbinleft
         
 
         hdu_primary = fits.PrimaryHDU(header=self.header)
@@ -590,7 +592,7 @@ class simulation:
         hdu_errors = fits.ImageHDU(data=snbinned_err, name='ERR')
         hdu_wave = fits.ImageHDU(data=self.wave, name='WAVE')
         newtable = {'id': range(len(snbinned_flux)),
-                    'x': np.zeros(len(snbinned_flux)),
+                    'x': rbinright,
                     'y': np.zeros(len(snbinned_flux))}
         
         newtable = Table(newtable)
@@ -616,6 +618,7 @@ class simulation:
         plt.xlabel('rbinright')
         plt.ylabel('snbin')
         hdul.writeto(directory+filename, overwrite=True)
+        
           
  
     def voronoibin(self, target_sn=10, lineid='6563', label='flux', plot=False):
