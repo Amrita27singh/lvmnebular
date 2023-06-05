@@ -619,7 +619,6 @@ class simulation:
         plt.ylabel('snbin')
         hdul.writeto(directory+filename, overwrite=True)
         
-          
  
     def voronoibin(self, target_sn=10, lineid='6563', label='flux', plot=False):
         '''
