@@ -13,7 +13,8 @@
 #all the radial Te and ne profiles
 ./*/plotprofiles/*.png
 
-
+#csv and fits file
+shell*
 1
 
 #ignoring all the simulations stored for analysis
