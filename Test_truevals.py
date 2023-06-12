@@ -10,7 +10,7 @@ from astropy.io import fits
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.table import Table
-
+import sys
 
 #Radius’, 'Te', 'ne', 'H+', 'O0', 'O+', 'O++', 'N0', 'N+', 'N++', 'S0', 'S+', 'S++
 
@@ -18,7 +18,11 @@ from astropy.table import Table
 hdu=fits.open('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/testneb_tutorial3_ex1.fits')
 vals=hdu['Comp_0_PhysParams'].data
 
+print("Radius:",vals[0], vals[0].shape)
+print("True Te:",vals[1],vals[1].shape)
+print("True Ne:",vals[2],vals[2].shape)
 
+sys.exit()
 ### Te vs R(pc)
 fig, ax3=plt.subplots()
 ax3.plot(vals[0], vals[1], label='True Te')

@@ -98,6 +98,7 @@ class simulation:
         self.snbinned_err=None
         self.rbinright=None
         self.rbinleft=None
+        self.rad=None
 
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
@@ -723,7 +724,13 @@ class simulation:
         with imageio.get_writer('./new_field_test_'+str(float(k0))+'.gif', mode='I') as writer:
             for slice in new_field:
                 writer.append_data(slice)
-    
+
+    def projectedTe(self):
+        R=self.rad
+        rmax=np.max(self.vals[0])
+
+
+
 ##################################################################### Plotting methods ##############################################
 
     def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
@@ -822,9 +829,8 @@ class simulation:
         sel=np.isfinite(z)      
 
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
-        
         rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
-
+        self.rad=rad
         fig, ax = plt.subplots(figsize=(8,5))
         ax.plot(rad, z[sel], '.', label='data')
 
