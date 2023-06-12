@@ -337,12 +337,12 @@ class simulation:
 
             f3726=self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
             f3729=self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
-            #f7319=self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
+            f7319=np.zeros(self.nfib)
             f7320=self.linefitdict['7320_flux']+np.random.randn(self.nfib)*self.linefitdict['7320_flux_err']
-            #f7330=self.linefitdict['7330_flux']+np.random.randn(self.nfib)*self.linefitdict['7330_flux_err']
+            f7330=np.zeros(self.nfib)
             f7331=self.linefitdict['7331_flux']+np.random.randn(self.nfib)*self.linefitdict['7331_flux_err']
 
-            TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7320+f7331), den=ne, wave1=3727, wave2=7325)
+            TO2[:,i]=O2.getTemDen((f3726+f3729)/(f7320+f7331+f7319+f7330), den=ne, wave1=3727, wave2=7325)
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
@@ -948,7 +948,7 @@ def error_func(wave, gaussian, popt, pcov, e=1e-7):
     sigma=np.sqrt(var)
     return sigma
 
-def fit_gauss(wave, spectrum, error, lwave, dwave=4, plot=True, plotout='linefit'):
+def fit_gauss(wave, spectrum, error, lwave, dwave=5, plot=True, plotout='linefit'):
     '''
     This function produce gaussion fit to all emission line in lines.
 
