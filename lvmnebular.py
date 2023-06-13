@@ -99,7 +99,13 @@ class simulation:
         self.snbinned_err=None
         self.rbinright=None
         self.rbinleft=None
-        self.rad=None
+
+        #projectedTe attributes
+        self.integral_values=None
+        self.T0_new= None
+        self.a_new= None
+        self.R=None #projected R(in pc)
+        self.r0_unique=None
 
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
@@ -725,32 +731,67 @@ class simulation:
 
     def projectedTe(self, n_steps=10):
 
+        #determining projected Radius
         distance=16000 #u.pc
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
         R=r*distance*np.pi/648000 # converting arcsecs to parsec
+        self.R=R
+
+        #loading true Radius (108 values)
         r0=self.vals[0]
-        rmax=np.max(r0)
+        #loading true Temperature 
         T0=self.vals[1]
+        #loading ionic abundance of NII
         a=self.vals[8]
-        for i in R:
+
+        r0_unique, indices = np.unique(r0, return_index=True) #107 unique radii
+        T0_unique = T0[indices]
+        a_unique = a[indices]
+
+        self.r0_unique=r0_unique
+        #print(r0_unique, T0_unique, a_unique, len(r0_unique))
+
+        integral_values = []
+
+        for i in R: #it'll iterate for 169 fibers
             #calculating theta_max (in radians)
-            theta_max=np.arccos(i/rmax)
+            theta_max=np.arccos(i/np.max(r0_unique))
 
             #distributing theta in n_steps (in radians)
             theta=np.linspace(-theta_max, theta_max, n_steps)
-            step_size=(theta_max-theta_max)/n_steps
 
-            #checking each theta if it's in the range
+            cubic_interp_T0 = interp1d(r0_unique, T0_unique, kind='cubic', axis=-1)
+            cubic_interp_a  = interp1d(r0_unique, a_unique, kind='cubic', axis=-1)
+
+            integral_iteration = []
+
+            #checking each angle if it's in the range
             for angle in theta:
                 if angle<=theta_max and angle>=-theta_max:
                     r_new=i/np.cos(angle)
-                    T0_new=interp1d(r_new,T0, kind='cubic')
+                    if r_new >= np.min(r0_unique) and r_new <= np.max(r0_unique):
+                        T0_new=cubic_interp_T0(r_new)
+                        a_new=cubic_interp_a(r_new)
 
+                        #I think I need to concatinate r0 and r_new so as to get T0_new, a_new and integral for full nebula
+                        
+                        func=1/(np.cos(theta)**2)
+                        integral=np.sum(T0_new*a_new*func)/np.sum(a_new*func)
 
-                    func=1/(np.cos(theta)**2)
-                    #integral=np.sum(self.vals[1]*self.vals[8]*func)/np.sum(self.vals[8]*func)
-        print(T0_new, r_new, theta.shape, r_new.shape)
+                        integral_iteration.append(integral)  
+    
+        
+            integral_values.append(integral_iteration)
 
+        self.integral_values = integral_values
+        self.T0_new=T0_new
+        self.a_new=a_new
+        #self.T_total=T_total
+        #self.a_total=a_total
+      
+                        
+                
+                        
 
 ##################################################################### Plotting methods ##############################################
 
@@ -851,7 +892,6 @@ class simulation:
 
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
         rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
-        self.rad=rad
         fig, ax = plt.subplots(figsize=(8,5))
         ax.plot(rad, z[sel], '.', label='data')
 
