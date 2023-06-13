@@ -19,5 +19,5 @@ shell*
 
 #ignoring all the simulations stored for analysis
 Bubble*
-
+lvmnebular.cpython*
 __pycache__/lvmnebular.cpython-38.pyc

@@ -22,7 +22,6 @@ print("Radius:",vals[0], vals[0].shape)
 print("True Te:",vals[1],vals[1].shape)
 print("True Ne:",vals[2],vals[2].shape)
 
-sys.exit()
 ### Te vs R(pc)
 fig, ax3=plt.subplots()
 ax3.plot(vals[0], vals[1], label='True Te')

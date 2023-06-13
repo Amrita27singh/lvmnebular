@@ -10,6 +10,7 @@ from scipy.fft import fftn, ifftn
 import imageio
 import matplotlib.tri as tri
 from vorbin.voronoi_2d_binning import voronoi_2d_binning
+from scipy.interpolate import interp1d
 
 
 
@@ -366,7 +367,6 @@ class simulation:
         self.TeO3 = np.nanmean(TO3, axis=1)
         self.TeO3err = np.nanstd(TO3, axis=1)
 
-      
         self.linefitdict['TeO3']=self.TeO3
         self.linefitdict['TeO3err']=self.TeO3err
         
@@ -573,14 +573,14 @@ class simulation:
                 snbinned_err[cnt, :] = np.sum(self.err[indices, :], axis=0)
                 newx.append(rad)
                 cnt=cnt+1
-                print(cnt)
+                #print(cnt)
 
 
-        print("GB TEST")
-        print(np.shape(snbinned_flux))
+        #print("GB TEST")
+        #print(np.shape(snbinned_flux))
         snbinned_flux=snbinned_flux[0:cnt,:]
         snbinned_err=snbinned_err[0:cnt,:]
-        print(np.shape(snbinned_flux))
+        #print(np.shape(snbinned_flux))
 
         self.snbinned_flux=snbinned_flux
         self.snbinned_err=snbinned_err
@@ -613,14 +613,13 @@ class simulation:
            os.mkdir(plotdir)
 
         # printing values
-        print(len(indices), rbinright, len(rbinright), len(rbinleft), len(snbin), npix, len(npix), indices)
+        #print(len(indices), rbinright, len(rbinright), len(rbinleft), len(snbin), npix, len(npix), indices)
 
         plt.plot(rbinright, snbin)
         plt.xlabel('rbinright')
         plt.ylabel('snbin')
         hdul.writeto(directory+filename, overwrite=True)
         
- 
     def voronoibin(self, target_sn=10, lineid='6563', label='flux', plot=False):
         '''
         Input:
@@ -692,7 +691,6 @@ class simulation:
             plt.savefig(plotdir+'/'+lineid+'.png')
             plt.show() 
 
-
     def pertsim(self, npoints=30, dim=3, n=3, k0=0.5, dk0=0.05 ):
        
         '''
@@ -725,10 +723,33 @@ class simulation:
             for slice in new_field:
                 writer.append_data(slice)
 
-    def projectedTe(self):
-        R=self.rad
-        rmax=np.max(self.vals[0])
+    def projectedTe(self, n_steps=10):
 
+        distance=16000 #u.pc
+        r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
+        R=r*distance*np.pi/648000 # converting arcsecs to parsec
+        r0=self.vals[0]
+        rmax=np.max(r0)
+        T0=self.vals[1]
+        a=self.vals[8]
+        for i in R:
+            #calculating theta_max (in radians)
+            theta_max=np.arccos(i/rmax)
+
+            #distributing theta in n_steps (in radians)
+            theta=np.linspace(-theta_max, theta_max, n_steps)
+            step_size=(theta_max-theta_max)/n_steps
+
+            #checking each theta if it's in the range
+            for angle in theta:
+                if angle<=theta_max and angle>=-theta_max:
+                    r_new=i/np.cos(angle)
+                    T0_new=interp1d(r_new,T0, kind='cubic')
+
+
+                    func=1/(np.cos(theta)**2)
+                    #integral=np.sum(self.vals[1]*self.vals[8]*func)/np.sum(self.vals[8]*func)
+        print(T0_new, r_new, theta.shape, r_new.shape)
 
 
 ##################################################################### Plotting methods ##############################################
@@ -915,7 +936,6 @@ def gaussian(wave,flux,mean,sd):
     gaussian profile (1D numpy array)
     '''
     return flux/(np.sqrt(2*np.pi)*sd)*np.exp((wave-mean)**2/(-2*sd**2))
-
 
 def error_func(wave, gaussian, popt, pcov, e=1e-7):
     
