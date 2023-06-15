@@ -106,6 +106,7 @@ class simulation:
         self.a_new= None
         self.R=None #projected R(in pc)
         self.r0_unique=None
+        
 
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
@@ -359,8 +360,6 @@ class simulation:
         self.linefitdict['TeO2']=self.TeO2
         self.linefitdict['TeO2err']=self.TeO2err
         
-        
-
         # TO3 temperature diagnostic
         ne=100
         TO3=np.zeros((self.nfib, niter))
@@ -730,17 +729,18 @@ class simulation:
                 writer.append_data(slice)
 
     def projectedTe(self, n_steps=10):
-
-        #determining projected Radius
+        
         distance=16000 #u.pc
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
-        R=r*distance*np.pi/648000 # converting arcsecs to parsec
+        R=r*distance*np.pi/648000 
         self.R=R
 
         #loading true Radius (108 values)
         r0=self.vals[0]
+
         #loading true Temperature 
         T0=self.vals[1]
+        
         #loading ionic abundance of NII
         a=self.vals[8]
 
@@ -749,15 +749,13 @@ class simulation:
         a_unique = a[indices]
 
         self.r0_unique=r0_unique
-        #print(r0_unique, T0_unique, a_unique, len(r0_unique))
 
         integral_values = []
 
-        for i in R: #it'll iterate for 169 fibers
-            #calculating theta_max (in radians)
+        for i in R: #169 fibers
+            
             theta_max=np.arccos(i/np.max(r0_unique))
 
-            #distributing theta in n_steps (in radians)
             theta=np.linspace(-theta_max, theta_max, n_steps)
 
             cubic_interp_T0 = interp1d(r0_unique, T0_unique, kind='cubic', axis=-1)
@@ -769,17 +767,16 @@ class simulation:
             for angle in theta:
                 if angle<=theta_max and angle>=-theta_max:
                     r_new=i/np.cos(angle)
+                    
                     if r_new >= np.min(r0_unique) and r_new <= np.max(r0_unique):
                         T0_new=cubic_interp_T0(r_new)
                         a_new=cubic_interp_a(r_new)
-
-                        #I think I need to concatinate r0 and r_new so as to get T0_new, a_new and integral for full nebula
+                        
+                        #I think I need to concatenate r0 and r_new so as to get T0_new, a_new and integral for full nebula
                         
                         func=1/(np.cos(theta)**2)
                         integral=np.sum(T0_new*a_new*func)/np.sum(a_new*func)
-
                         integral_iteration.append(integral)  
-    
         
             integral_values.append(integral_iteration)
 
@@ -787,11 +784,7 @@ class simulation:
         self.T0_new=T0_new
         self.a_new=a_new
         #self.T_total=T_total
-        #self.a_total=a_total
-      
-                        
-                
-                        
+        #self.a_total=a_total        
 
 ##################################################################### Plotting methods ##############################################
 
