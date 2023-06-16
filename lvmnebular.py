@@ -108,7 +108,6 @@ class simulation:
         self.r0_unique=None
         
 
-
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
 
         self.datadir=datadir
@@ -146,7 +145,6 @@ class simulation:
         vals=hdu['Comp_0_PhysParams'].data
         self.vals=vals
 
-    
     def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , radbin=False, vorbin=False, snbin=False, pertsim=False, rbinmax=250, drbin=20, loadfile=True, plot=False):  
         '''
         This function fits each line in self.lineid in the spectrum of each spaxel and measures fluxes, linewidthsm and line centers
@@ -273,7 +271,6 @@ class simulation:
             self.linefitdict=Table(self.linefitdict)
             self.linefitdict.write(outfilename, overwrite=True)
             
-
     def runpyneb(self, niter=4, pertsim=False):
 
         '''
@@ -335,7 +332,7 @@ class simulation:
         S3=pn.Atom('S',3)
         #diags=pn.Diagnostics()   
 
-        ############################################################## Electron Temperature diagnostics ##############################################################
+                ############################################################## Electron Temperature diagnostics ##############################################################
 
 
         # TO2 temperature diagnostic
@@ -429,7 +426,7 @@ class simulation:
         self.linefitdict['TeS3err']=self.TeS3err   
         
         
-    ############################################################## Electron density diagnostics ##############################################################
+                 ############################################################## Electron density diagnostics ##############################################################
 
         # NO2 electron density diagnostic
         NO2=np.zeros((self.nfib, niter))
@@ -464,7 +461,6 @@ class simulation:
         self.linefitdict['delta_dec']=self.linefitdict['delta_dec']
 
         self.linefitdict.write('diag_Temp_Den.fits', overwrite=True)
-
 
     def radialbin(self, rbinmax, drbin, pertsim=False):
 
@@ -737,10 +733,8 @@ class simulation:
 
         #loading true Radius (108 values)
         r0=self.vals[0]
-
         #loading true Temperature 
-        T0=self.vals[1]
-        
+        T0=self.vals[1] 
         #loading ionic abundance of NII
         a=self.vals[8]
 
@@ -749,13 +743,11 @@ class simulation:
         a_unique = a[indices]
 
         self.r0_unique=r0_unique
-
         integral_values = []
 
         for i in R: #169 fibers
             
             theta_max=np.arccos(i/np.max(r0_unique))
-
             theta=np.linspace(-theta_max, theta_max, n_steps)
 
             cubic_interp_T0 = interp1d(r0_unique, T0_unique, kind='cubic', axis=-1)
@@ -765,20 +757,22 @@ class simulation:
 
             #checking each angle if it's in the range
             for angle in theta:
-                if angle<=theta_max and angle>=-theta_max:
-                    r_new=i/np.cos(angle)
+                #if angle<=theta_max and angle>=-theta_max:
+                r_new=i/np.cos(angle)
+                
+                if r_new >= np.min(r0_unique) and r_new <= np.max(r0_unique):
+                    T0_new=cubic_interp_T0(r_new)
+                    a_new=cubic_interp_a(r_new)
+                    #I think I need to concatenate r0 and r_new so as to get T0_new, a_new and integral for full nebula
+                
+                
                     
-                    if r_new >= np.min(r0_unique) and r_new <= np.max(r0_unique):
-                        T0_new=cubic_interp_T0(r_new)
-                        a_new=cubic_interp_a(r_new)
-                        
-                        #I think I need to concatenate r0 and r_new so as to get T0_new, a_new and integral for full nebula
-                        
-                        func=1/(np.cos(theta)**2)
-                        integral=np.sum(T0_new*a_new*func)/np.sum(a_new*func)
-                        integral_iteration.append(integral)  
+            func=1/(np.cos(angle)**2)
+            integral=np.sum(T0_new*a_new*func)/np.sum(a_new*func)
+            integral_iteration.append(integral)  
         
             integral_values.append(integral_iteration)
+            #integral_values = np.array(integral_values).flatten()
 
         self.integral_values = integral_values
         self.T0_new=T0_new
