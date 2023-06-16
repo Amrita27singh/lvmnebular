@@ -764,12 +764,10 @@ class simulation:
                     T0_new=cubic_interp_T0(r_new)
                     a_new=cubic_interp_a(r_new)
                     #I think I need to concatenate r0 and r_new so as to get T0_new, a_new and integral for full nebula
-                
-                
                     
-            func=1/(np.cos(angle)**2)
-            integral=np.sum(T0_new*a_new*func)/np.sum(a_new*func)
-            integral_iteration.append(integral)  
+                    func=1/(np.cos(angle)**2)
+                    integral=np.sum(T0_new*a_new*func)/np.sum(a_new*func)
+                    integral_iteration.append(integral)  
         
             integral_values.append(integral_iteration)
             #integral_values = np.array(integral_values).flatten()
