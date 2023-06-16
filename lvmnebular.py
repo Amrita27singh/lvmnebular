@@ -11,6 +11,7 @@ import imageio
 import matplotlib.tri as tri
 from vorbin.voronoi_2d_binning import voronoi_2d_binning
 from scipy.interpolate import interp1d
+from scipy.integrate import trapezoid
 
 
 
@@ -106,6 +107,7 @@ class simulation:
         self.a_new= None
         self.R=None #projected R(in pc)
         self.r0_unique=None
+        self.Teproj=None
         
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
@@ -723,6 +725,37 @@ class simulation:
         with imageio.get_writer('./new_field_test_'+str(float(k0))+'.gif', mode='I') as writer:
             for slice in new_field:
                 writer.append_data(slice)
+
+    def pojectedTeb(self):
+
+        #loading true 3D Radius (108 values)
+        r0=self.vals[0]
+        #loading true Temperature 
+        T0=self.vals[1] 
+        #loading ionic abundance of NII
+        a=self.vals[8]
+
+        cubic_interp_T0 = interp1d(r0, T0, kind='cubic', axis=-1)
+        cubic_interp_a  = interp1d(r0, a, kind='cubic', axis=-1)
+
+        R=r0 # on-sky projected radius
+        Teproj=np.zeroslike(R) # on-sky projected temperature
+
+        for i,Ri in enumerate(R):
+
+            theta_max=np.arccos(Ri/np.max(R))
+            theta=np.linspace(-theta_max, theta_max, 100)
+
+            r0aux=Ri/np.cos(theta)
+            T0aux=cubic_interp_T0(r0aux)
+            aaux=cubic_interp_a(r0aux)
+
+            Teproj[i]=trapezoid(T0aux*aaux*np.sec(theta)**2, x=theta)/trapezoid(aaux*np.sec(theta)**2, x=theta)
+
+        self.R=R
+        self.Teproj=Teproj
+
+
 
     def projectedTe(self, n_steps=10):
         
