@@ -754,9 +754,11 @@ class simulation:
             cubic_interp_a  = interp1d(r0_unique, a_unique, kind='cubic', axis=-1)
 
             integral_iteration = []
+            integrand1=np.zeros(n_steps)
+            integrand2=np.zeros(n_steps)
 
             #checking each angle if it's in the range
-            for angle in theta:
+            for j,angle in enumerate(theta):
                 #if angle<=theta_max and angle>=-theta_max:
                 r_new=i/np.cos(angle)
                 
@@ -766,8 +768,11 @@ class simulation:
                     #I think I need to concatenate r0 and r_new so as to get T0_new, a_new and integral for full nebula
                     
                     func=1/(np.cos(angle)**2)
-                    integral=np.sum(T0_new*a_new*func)/np.sum(a_new*func)
-                    integral_iteration.append(integral)  
+                    integrand1[j]=T0_new*a_new*func
+                    integrand2[j]=a_new*func
+
+            integral=np.sum(integrand1)/np.sum(integrand2)
+            integral_iteration.append(integral)  
         
             integral_values.append(integral_iteration)
             #integral_values = np.array(integral_values).flatten()
