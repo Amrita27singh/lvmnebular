@@ -176,16 +176,16 @@ class simulation:
         
 
         if vorbin:
-            plotdir=self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
+            plotdir=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_linefits.fits'
+            outfilename=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_linefits.fits'
 
         elif snbin:
-            plotdir=self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
+            plotdir=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_linefits.fits'
+            outfilename=self.datadir+self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_linefits.fits'
 
 
         elif radbin:
@@ -205,16 +205,16 @@ class simulation:
             self.nfib=len(self.fiberdata)
             print("no.of bins:", self.nfib)
 
-            plotdir=self.simname+'/'+self.simname+'_radbinned/'+'linefitplots/'
+            plotdir=self.datadir+self.simname+'/'+self.simname+'_radbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir) 
-            outfilename=self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_linefits.fits'   
+            outfilename=self.datadir+self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_linefits.fits'   
 
         else:
             plotdir=self.datadir+self.simname+'/linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.simname+'/'+self.simname+'_linefits.fits'
+            outfilename=self.datadir+self.simname+'/'+self.simname+'_linefits.fits'
 
         self.linefitfile=outfilename 
         print("linefitfile:",self.linefitfile)
@@ -726,7 +726,7 @@ class simulation:
             for slice in new_field:
                 writer.append_data(slice)
 
-    def pojectedTeb(self):
+    def projectedTe(self):
 
         #loading true 3D Radius (108 values)
         r0=self.vals[0]
@@ -735,86 +735,34 @@ class simulation:
         #loading ionic abundance of NII
         a=self.vals[8]
 
-        cubic_interp_T0 = interp1d(r0, T0, kind='cubic', axis=-1)
-        cubic_interp_a  = interp1d(r0, a, kind='cubic', axis=-1)
+        r0=r0[1:]
+        T0=T0[1:]
+        a=a[1:]
 
-        R=r0 # on-sky projected radius
-        Teproj=np.zeroslike(R) # on-sky projected temperature
+        cubic_interp_T0 = interp1d(r0, T0, kind='cubic', axis=-1, bounds_error=False)
+        cubic_interp_a  = interp1d(r0, a, kind='cubic', axis=-1, bounds_error=False)
+
+        R=np.linspace(0, np.max(r0),100) # on-sky projected radius
+        Teproj=np.zeros_like(R) # on-sky projected temperature
 
         for i,Ri in enumerate(R):
 
-            theta_max=np.arccos(Ri/np.max(R))
+            theta_max=np.arccos(Ri/np.max(R))*0.9999999
             theta=np.linspace(-theta_max, theta_max, 100)
 
             r0aux=Ri/np.cos(theta)
             T0aux=cubic_interp_T0(r0aux)
             aaux=cubic_interp_a(r0aux)
+            T0aux[~np.isfinite(T0aux)]=0
+            aaux[~np.isfinite(aaux)]=0
 
-            Teproj[i]=trapezoid(T0aux*aaux*np.sec(theta)**2, x=theta)/trapezoid(aaux*np.sec(theta)**2, x=theta)
+            Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
 
         self.R=R
         self.Teproj=Teproj
 
 
-
-    def projectedTe(self, n_steps=10):
-        
-        distance=16000 #u.pc
-        r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
-        R=r*distance*np.pi/648000 
-        self.R=R
-
-        #loading true Radius (108 values)
-        r0=self.vals[0]
-        #loading true Temperature 
-        T0=self.vals[1] 
-        #loading ionic abundance of NII
-        a=self.vals[8]
-
-        r0_unique, indices = np.unique(r0, return_index=True) #107 unique radii
-        T0_unique = T0[indices]
-        a_unique = a[indices]
-
-        self.r0_unique=r0_unique
-        integral_values = []
-
-        for i in R: #169 fibers
-            
-            theta_max=np.arccos(i/np.max(r0_unique))
-            theta=np.linspace(-theta_max, theta_max, n_steps)
-
-            cubic_interp_T0 = interp1d(r0_unique, T0_unique, kind='cubic', axis=-1)
-            cubic_interp_a  = interp1d(r0_unique, a_unique, kind='cubic', axis=-1)
-
-            integral_iteration = []
-            integrand1=np.zeros(n_steps)
-            integrand2=np.zeros(n_steps)
-
-            #checking each angle if it's in the range
-            for j,angle in enumerate(theta):
-                #if angle<=theta_max and angle>=-theta_max:
-                r_new=i/np.cos(angle)
-                
-                if r_new >= np.min(r0_unique) and r_new <= np.max(r0_unique):
-                    T0_new=cubic_interp_T0(r_new)
-                    a_new=cubic_interp_a(r_new)
-                    #I think I need to concatenate r0 and r_new so as to get T0_new, a_new and integral for full nebula
-                    
-                    func=1/(np.cos(angle)**2)
-                    integrand1[j]=T0_new*a_new*func
-                    integrand2[j]=a_new*func
-
-            integral=np.sum(integrand1)/np.sum(integrand2)
-            integral_iteration.append(integral)  
-        
-            integral_values.append(integral_iteration)
-            #integral_values = np.array(integral_values).flatten()
-
-        self.integral_values = integral_values
-        self.T0_new=T0_new
-        self.a_new=a_new
-        #self.T_total=T_total
-        #self.a_total=a_total        
+      
 
 ##################################################################### Plotting methods ##############################################
 
@@ -974,6 +922,7 @@ class simulation:
         fig, ax = plt.subplots(figsize=(8,5))
         ax.plot(rad, z[sel], '.', label='data')
         ax.plot(self.vals[0], vals, c='grey', label='True profile')
+        ax.plot(self.R, self.Teproj, color='orange')
         ax.axvline(x=18, c='red', linestyle='--', label='Strömgren radius')  # a constant vertical line
         ax.set_ylim(min, max)
         ax.set_ylabel(title)
