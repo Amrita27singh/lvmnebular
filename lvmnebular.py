@@ -14,7 +14,6 @@ from scipy.interpolate import interp1d
 from scipy.integrate import trapezoid
 
 
-
 class simulation:
     '''
     Object simulation contains all the relevant/needed output from an LVM simulator run
@@ -739,6 +738,7 @@ class simulation:
 
         R=np.linspace(0, np.max(r0),100) # on-sky projected radius
         Teproj=np.zeros_like(R) # on-sky projected temperature
+        Teproj_simp=np.zeros_like(R) # on-sky projected temperature
 
         for i,Ri in enumerate(R):
 
@@ -752,11 +752,9 @@ class simulation:
             aaux[~np.isfinite(aaux)]=0
 
             Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
-
         self.R=R
         self.Teproj=Teproj
-
-
+        
 ##################################################################### Plotting methods ##############################################
 
     def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
@@ -829,8 +827,7 @@ class simulation:
         Plot out radial profiles of Te and ne.  
         
         '''
-        distance=16000 #u.pc
-
+        
         if vorbin:
             plotdir=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_plotprofile/'
             if (not os.path.isdir(plotdir)):
@@ -852,7 +849,9 @@ class simulation:
             if not (os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
         
-        sel=np.isfinite(z)      
+        sel=np.isfinite(z)  
+            
+        distance=16000 #u.pc
 
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
         rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
@@ -920,7 +919,7 @@ class simulation:
         fig, (ax1, ax) = plt.subplots(2, 1, sharex=True, figsize=(8,7))
         ax.plot(rad, z[sel], '.', label='data') #Te from Pyneb
         ax.plot(self.vals[0], val1, c='grey', label='True profile') #true Te from model
-        ax.plot(self.R, self.Teproj, color='orange', label='Projected temp') #Projected Te 
+        ax.plot(self.R, self.Teproj, color='orange', label='Projected Te') #Projected Te 
         ax1.plot(self.vals[0], val2, color='green', label='Ionic abundance') #Ionic abundance
         
         ax.axvline(x, c='red', linestyle='--', label='50% ionization')  # a constant vertical line with 50% or 90% of ionization; try to make it general
