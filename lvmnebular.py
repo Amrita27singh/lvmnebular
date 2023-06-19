@@ -617,7 +617,7 @@ class simulation:
         plt.ylabel('snbin')
         hdul.writeto(directory+filename, overwrite=True)
         
-    def voronoibin(self, target_sn=10, lineid='6563', label='flux', plot=False):
+    def voronoibin(self, target_sn=10, lineid='6563', label='flux', plot=False, pertsim=False):
         '''
         Input:
         targetsnr: The desired minimum snr (int; default is 10)
@@ -808,7 +808,6 @@ class simulation:
             ax.set_ylabel('Dec')
             ax.axis('equal')
             plt.savefig(plotdir+'/'+output+'.png', dpi=200)
-
         
     def plotprofile(self, z, min, max, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
 
@@ -864,7 +863,6 @@ class simulation:
         ax.legend()
         plt.savefig(plotdir+'/'+output+'_rad.png', dpi=200)      
  
-
     def overplotprofile(self, z, val1, val2, min, max, x, n, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
 
         '''
@@ -1055,7 +1053,6 @@ def k_vector(npoints):
     
     kvector = 2*np.pi/ npoints* np.concatenate([k1, k2])
     return kvector
-
 
 def pk_vector_delta(kvector, dim, k0, dk0):
     
