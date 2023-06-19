@@ -102,13 +102,8 @@ class simulation:
         self.rbinleft=None
 
         #projectedTe attributes
-        self.integral_values=None
-        self.T0_new= None
-        self.a_new= None
         self.R=None #projected R(in pc)
-        self.r0_unique=None
         self.Teproj=None
-        
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
 
@@ -176,16 +171,16 @@ class simulation:
         
 
         if vorbin:
-            plotdir=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
+            plotdir=self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_linefits.fits'
+            outfilename=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_linefits.fits'
 
         elif snbin:
-            plotdir=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
+            plotdir=self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.datadir+self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_linefits.fits'
+            outfilename=self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_linefits.fits'
 
 
         elif radbin:
@@ -193,7 +188,7 @@ class simulation:
             self.drbin=drbin
             self.radialbin(rbinmax, drbin, pertsim=False)
 
-            self.simfile=self.datadir+self.simname+'/'+self.simname+'_radbinned'+'/'+self.simname+'_radbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
+            self.simfile=self.simname+'/'+self.simname+'_radbinned'+'/'+self.simname+'_radbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
 
             with fits.open(self.simfile) as hdu:
                 self.header = hdu[0].header
@@ -205,16 +200,16 @@ class simulation:
             self.nfib=len(self.fiberdata)
             print("no.of bins:", self.nfib)
 
-            plotdir=self.datadir+self.simname+'/'+self.simname+'_radbinned/'+'linefitplots/'
+            plotdir=self.simname+'/'+self.simname+'_radbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir) 
-            outfilename=self.datadir+self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_linefits.fits'   
+            outfilename=self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_linefits.fits'   
 
         else:
-            plotdir=self.datadir+self.simname+'/linefitplots/'
+            plotdir=self.simname+'/linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.datadir+self.simname+'/'+self.simname+'_linefits.fits'
+            outfilename=self.simname+'/'+self.simname+'_linefits.fits'
 
         self.linefitfile=outfilename 
         print("linefitfile:",self.linefitfile)
@@ -726,14 +721,14 @@ class simulation:
             for slice in new_field:
                 writer.append_data(slice)
 
-    def projectedTe(self):
+    def projectedTe(self, a0, n=100):
 
         #loading true 3D Radius (108 values)
         r0=self.vals[0]
         #loading true Temperature 
         T0=self.vals[1] 
         #loading ionic abundance of NII
-        a=self.vals[8]
+        a=a0
 
         r0=r0[1:]
         T0=T0[1:]
@@ -748,7 +743,7 @@ class simulation:
         for i,Ri in enumerate(R):
 
             theta_max=np.arccos(Ri/np.max(R))*0.9999999
-            theta=np.linspace(-theta_max, theta_max, 100)
+            theta=np.linspace(-theta_max, theta_max, n)
 
             r0aux=Ri/np.cos(theta)
             T0aux=cubic_interp_T0(r0aux)
@@ -761,8 +756,6 @@ class simulation:
         self.R=R
         self.Teproj=Teproj
 
-
-      
 
 ##################################################################### Plotting methods ##############################################
 
@@ -873,16 +866,19 @@ class simulation:
         plt.savefig(plotdir+'/'+output+'_rad.png', dpi=200)      
  
 
-    def overplotprofile(self, z, vals, min, max, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
+    def overplotprofile(self, z, val1, val2, min, max, x, n, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
 
         '''
         This function will plot 2 D radial profiles of Te and ne.
         
         Input:
         z: Te, ne and errors from linefitdict table (1 D array)
+        val1:True electron temp or density provided
+        val2:Ionic abundance for each species 
         min: minimum value of z (float)
         max: maximum value of z (float)
-        nlevels: no. of levels in maps (int)
+        x=50% ionization position
+        n: no. of steps in theta (int)
         title: Title of maps (str)
         output:Output names of the plot maps. (str)
 
@@ -891,6 +887,8 @@ class simulation:
         
         '''
         distance=16000 #u.pc
+
+        self.projectedTe(val2, n)
 
         if vorbin:
             plotdir=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_overplotprofile/'
@@ -919,13 +917,20 @@ class simulation:
         
         rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
 
-        fig, ax = plt.subplots(figsize=(8,5))
-        ax.plot(rad, z[sel], '.', label='data')
-        ax.plot(self.vals[0], vals, c='grey', label='True profile')
-        ax.plot(self.R, self.Teproj, color='orange')
-        ax.axvline(x=18, c='red', linestyle='--', label='Strömgren radius')  # a constant vertical line
+        fig, (ax1, ax) = plt.subplots(2, 1, sharex=True, figsize=(8,7))
+        ax.plot(rad, z[sel], '.', label='data') #Te from Pyneb
+        ax.plot(self.vals[0], val1, c='grey', label='True profile') #true Te from model
+        ax.plot(self.R, self.Teproj, color='orange', label='Projected temp') #Projected Te 
+        ax1.plot(self.vals[0], val2, color='green', label='Ionic abundance') #Ionic abundance
+        
+        ax.axvline(x, c='red', linestyle='--', label='50% ionization')  # a constant vertical line with 50% or 90% of ionization; try to make it general
+
+        ax1.set_position([0.125, 0.5, 0.775, 0.25])  # [left, bottom, width, height]
+        ax.set_position([0.125, 0.1, 0.775, 0.4])
+
         ax.set_ylim(min, max)
         ax.set_ylabel(title)
+        ax1.set_ylabel('Ionic abundance')
         ax.set_xlabel('Radius (parsec)')
         ax.legend()
         plt.savefig(plotdir+'/'+output+'_rad.png', dpi=300)      
