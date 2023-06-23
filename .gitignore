@@ -16,7 +16,7 @@
 #csv and fits file
 shell*
 1
-
+*.png
 #ignoring all the simulations stored for analysis
 Bubble*
 lvmnebular.cpython*
