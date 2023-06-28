@@ -103,6 +103,7 @@ class simulation:
         #projectedTe attributes
         self.R=None #projected R(in pc)
         self.Teproj=None
+        self.aproj=None
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
 
@@ -739,6 +740,7 @@ class simulation:
         R=np.linspace(0, np.max(r0),100) # on-sky projected radius
         Teproj=np.zeros_like(R) # on-sky projected temperature
         Teproj_simp=np.zeros_like(R) # on-sky projected temperature
+        aproj=np.zeros_like(R)
 
         for i,Ri in enumerate(R):
 
@@ -752,9 +754,22 @@ class simulation:
             aaux[~np.isfinite(aaux)]=0
 
             Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
+            aproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(T0aux*np.cos(theta)**(-2), x=theta)
         self.R=R
         self.Teproj=Teproj
-        
+        self.aproj=aproj
+
+
+    def chem_abund(self):
+
+        f4363=self.linefitdict['4363_flux']
+        f5007=self.linefitdict['5007_flux']
+        f4861=self.linefitdict['4861_flux']
+
+        O3=pn.Atom('O',3)
+        Opp_abund=O3.getIonAbundance(int_ratio=f5007/f4861, tem=self.linefitdict['TeO3'], den=self.linefitdict['neO2'], wave=5007, Hbeta=100)
+        print('O++/O = {:5.2e}'.format(Opp_abund))
+
 ##################################################################### Plotting methods ##############################################
 
     def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
