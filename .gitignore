@@ -12,7 +12,7 @@
 
 #all the radial Te and ne profiles
 ./*/plotprofiles/*.png
-
+*.gif
 #csv and fits file
 shell*
 1
