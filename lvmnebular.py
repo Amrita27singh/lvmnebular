@@ -768,9 +768,9 @@ class simulation:
 
     def chem_abund(self):
 
-        f4363=self.linefitdict['4363_flux']#+np.random.randn(self.nfib)*self.linefitdict['4363_flux_err']
-        f5007=self.linefitdict['5007_flux']#+np.random.randn(self.nfib)*self.linefitdict['5007_flux_err']
-        f4861=self.linefitdict['4861_flux']#+np.random.randn(self.nfib)*self.linefitdict['4861_flux_err']
+        f4363=self.linefitdict['4363_flux']
+        f5007=self.linefitdict['5007_flux']
+        f4861=self.linefitdict['4861_flux']
 
         O3=pn.Atom('O',3)
         self.OppH=O3.getIonAbundance(int_ratio=100*f5007/f4861, tem=self.linefitdict['TeO3'], den=self.linefitdict['neO2'], wave=5007, Hbeta=100)
