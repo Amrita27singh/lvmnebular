@@ -171,16 +171,16 @@ class simulation:
         
 
         if vorbin:
-            plotdir=self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
+            plotdir=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_linefits.fits'
+            outfilename=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_linefits.fits'
 
         elif snbin:
-            plotdir=self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
+            plotdir=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_linefits.fits'
+            outfilename=self.datadir+self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_linefits.fits'
 
 
         elif radbin:
@@ -188,7 +188,7 @@ class simulation:
             self.drbin=drbin
             self.radialbin(rbinmax, drbin, pertsim=False)
 
-            self.simfile=self.simname+'/'+self.simname+'_radbinned'+'/'+self.simname+'_radbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
+            self.simfile=self.datadir+self.simname+'/'+self.simname+'_radbinned'+'/'+self.simname+'_radbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
 
             with fits.open(self.simfile) as hdu:
                 self.header = hdu[0].header
@@ -200,16 +200,16 @@ class simulation:
             self.nfib=len(self.fiberdata)
             print("no.of bins:", self.nfib)
 
-            plotdir=self.simname+'/'+self.simname+'_radbinned/'+'linefitplots/'
+            plotdir=self.datadir+self.simname+'/'+self.simname+'_radbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir) 
-            outfilename=self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_linefits.fits'   
+            outfilename=self.datadir+self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_linefits.fits'   
 
         else:
-            plotdir=self.simname+'/linefitplots/'
+            plotdir=self.datadir+self.simname+'/linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.simname+'/'+self.simname+'_linefits.fits'
+            outfilename=self.datadir+self.simname+'/'+self.simname+'_linefits.fits'
 
         self.linefitfile=outfilename 
         print("linefitfile:",self.linefitfile)
