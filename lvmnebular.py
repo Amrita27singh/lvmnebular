@@ -12,6 +12,7 @@ import matplotlib.tri as tri
 from vorbin.voronoi_2d_binning import voronoi_2d_binning
 from scipy.interpolate import interp1d
 from scipy.integrate import trapezoid
+import astropy.units as u
 
 
 class simulation:
@@ -104,6 +105,7 @@ class simulation:
         self.R=None #projected R(in pc)
         self.Teproj=None
         self.aproj=None
+        self.distance=None
 
 
         #Chemical abundance from pyneb attributes
@@ -903,7 +905,7 @@ class simulation:
         
         '''
         distance=16000 #u.pc
-
+        
         self.projectedTe(val2, n)
 
         if vorbin:
