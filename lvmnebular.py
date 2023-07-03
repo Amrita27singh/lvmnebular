@@ -105,6 +105,10 @@ class simulation:
         self.Teproj=None
         self.aproj=None
 
+
+        #Chemical abundance from pyneb attributes
+        self.OppH=None
+
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
 
         self.datadir=datadir
@@ -754,7 +758,7 @@ class simulation:
             aaux[~np.isfinite(aaux)]=0
 
             Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
-            aproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(T0aux*np.cos(theta)**(-2), x=theta)
+            aproj[i]=trapezoid(aaux*np.cos(theta)**(-2), x=theta)/trapezoid(np.cos(theta)**(-2), x=theta)
         self.R=R
         self.Teproj=Teproj
         self.aproj=aproj
@@ -762,13 +766,13 @@ class simulation:
 
     def chem_abund(self):
 
-        f4363=self.linefitdict['4363_flux']+np.random.randn(self.nfib)*self.linefitdict['4363_flux_err']
-        f5007=self.linefitdict['5007_flux']+np.random.randn(self.nfib)*self.linefitdict['5007_flux_err']
-        f4861=self.linefitdict['4861_flux']+np.random.randn(self.nfib)*self.linefitdict['4861_flux_err']
+        f4363=self.linefitdict['4363_flux']#+np.random.randn(self.nfib)*self.linefitdict['4363_flux_err']
+        f5007=self.linefitdict['5007_flux']#+np.random.randn(self.nfib)*self.linefitdict['5007_flux_err']
+        f4861=self.linefitdict['4861_flux']#+np.random.randn(self.nfib)*self.linefitdict['4861_flux_err']
 
         O3=pn.Atom('O',3)
-        Opp_abund=O3.getIonAbundance(int_ratio=f5007, tem=self.linefitdict['TeO3'], den=self.linefitdict['neO2'], wave=5007, Hbeta=100)
-        print('O++/O = {:5.5e}'.format(Opp_abund))
+        self.OppH=O3.getIonAbundance(int_ratio=100*f5007/f4861, tem=self.linefitdict['TeO3'], den=self.linefitdict['neO2'], wave=5007, Hbeta=100)
+        #print('O++/O = {:5.5e}'.format(Opp_abund))
 
 ##################################################################### Plotting methods ##############################################
 
