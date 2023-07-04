@@ -4,8 +4,11 @@ Created on Thu Aug  4 19:08:35 2022
 
 @author: amrita
 """
-import sys
-sys.path.append('home/amrita/lvmdatasimulator/')
+import os
+os.chdir('/home/amrita/LVM/lvmnebular/') 
+
+#import sys
+#sys.path.append('home/amrita/lvmdatasimulator/')
 
 from lvmdatasimulator import *
 

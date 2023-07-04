@@ -745,14 +745,14 @@ class simulation:
 
         R=np.linspace(0, np.max(r0),100) # on-sky projected radius
         Teproj=np.zeros_like(R) # on-sky projected temperature
-        Teproj_simp=np.zeros_like(R) # on-sky projected temperature
+        #Teproj_simp=np.zeros_like(R) # on-sky projected temperature
         aproj=np.zeros_like(R)
 
         for i,Ri in enumerate(R):
 
             theta_max=np.arccos(Ri/np.max(R))*0.9999999
-            theta=np.linspace(-theta_max, theta_max, n)
-
+            theta=np.linspace(-theta_max, theta_max, n) #at R=0, theta_max will go from -0 to 0 (:D) and at R_max, theta_max=-89.99999 to 89.99999 degrees, causing 0 at center??
+            
             r0aux=Ri/np.cos(theta)
             T0aux=cubic_interp_T0(r0aux)
             aaux=cubic_interp_a(r0aux)
@@ -766,15 +766,25 @@ class simulation:
         self.aproj=aproj
 
 
-    def chem_abund(self):
+    def chem_abund(self, vals):
 
-        f4363=self.linefitdict['4363_flux']
-        f5007=self.linefitdict['5007_flux']
-        f4861=self.linefitdict['4861_flux']
+        if vals==5007:
+            f4363=self.linefitdict['4363_flux']
+            f5007=self.linefitdict['5007_flux']
+            f4861=self.linefitdict['4861_flux']
 
-        O3=pn.Atom('O',3)
-        self.OppH=O3.getIonAbundance(int_ratio=100*f5007/f4861, tem=self.linefitdict['TeO3'], den=self.linefitdict['neO2'], wave=5007, Hbeta=100)
-        #print('O++/O = {:5.5e}'.format(Opp_abund))
+            O3=pn.Atom('O',3)
+            self.OppH=O3.getIonAbundance(int_ratio=100*(f5007+f4363)/f4861, tem=self.linefitdict['TeO3'], den=self.linefitdict['neO2'], wave=5007, Hbeta=100)
+            #print('O++/O = {:5.5e}'.format(Opp_abund))
+
+        elif vals==3726:
+            f3726=self.linefitdict['3726_flux']
+            f3729=self.linefitdict['3729_flux']
+            f4861=self.linefitdict['4861_flux']
+
+            O2=pn.Atom('O',2)
+            self.OppH=O2.getIonAbundance(int_ratio=100*(f3726+f3729)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
+            #print('O++/O = {:5.5e}'.format(Opp_abund))
 
 ##################################################################### Plotting methods ##############################################
 
@@ -884,7 +894,7 @@ class simulation:
         ax.legend()
         plt.savefig(plotdir+'/'+output+'_rad.png', dpi=200)      
  
-    def overplotprofile(self, z, val1, val2, min, max, x, n, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
+    def overplotprofile(self, z, val1, val2, min, max, x, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
 
         '''
         This function will plot 2 D radial profiles of Te and ne.
@@ -904,9 +914,8 @@ class simulation:
         Plot out radial profiles of Te and ne.  
         
         '''
-        distance=16000 #u.pc
-        
-        self.projectedTe(val2, n)
+               
+        self.projectedTe(val2)
 
         if vorbin:
             plotdir=self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_overplotprofile/'
@@ -929,26 +938,22 @@ class simulation:
             if not (os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
         
-        sel=np.isfinite(z)      
+        sel=np.isfinite(z) 
 
+        distance=16000 #u.pc
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
-        
         rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
 
-        fig, (ax1, ax) = plt.subplots(2, 1, sharex=True, figsize=(8,7))
+        fig, ax = plt.subplots(1, 1, sharex=True, figsize=(8,5))
         ax.plot(rad, z[sel], '.', label='data') #Te from Pyneb
         ax.plot(self.vals[0], val1, c='grey', label='True profile') #true Te from model
         ax.plot(self.R, self.Teproj, color='orange', label='Projected Te') #Projected Te 
-        ax1.plot(self.vals[0], val2, color='green', label='Ionic abundance') #Ionic abundance
+        #ax1.plot(self.vals[0], val2, color='green', label='Ionic abundance') #Ionic abundance
         
         ax.axvline(x, c='red', linestyle='--', label='50% ionization')  # a constant vertical line with 50% or 90% of ionization; try to make it general
 
-        ax1.set_position([0.125, 0.5, 0.775, 0.25])  # [left, bottom, width, height]
-        ax.set_position([0.125, 0.1, 0.775, 0.4])
-
         ax.set_ylim(min, max)
         ax.set_ylabel(title)
-        ax1.set_ylabel('Ionic abundance')
         ax.set_xlabel('Radius (parsec)')
         ax.legend()
         plt.savefig(plotdir+'/'+output+'_rad.png', dpi=300)      
