@@ -748,19 +748,25 @@ class simulation:
         #Teproj_simp=np.zeros_like(R) # on-sky projected temperature
         aproj=np.zeros_like(R)
 
+    
         for i,Ri in enumerate(R):
-
-            theta_max=np.arccos(Ri/np.max(R))*0.9999999
-            theta=np.linspace(-theta_max, theta_max, n) #at R=0, theta_max will go from -0 to 0 (:D) and at R_max, theta_max=-89.99999 to 89.99999 degrees, causing 0 at center??
             
+            if np.any(Ri > np.min(r0)):
+                theta_max=np.arccos(Ri/np.max(R))*0.9999999
+                theta=np.linspace(-theta_max, theta_max, n)             
+            else:
+                theta_max=np.arccos(Ri/np.max(R))*0.9999999
+                theta1_max=np.arccos(Ri/np.min(r0))*0.9999999
+                theta=np.linspace(theta1_max, theta_max, n)
+                            
             r0aux=Ri/np.cos(theta)
             T0aux=cubic_interp_T0(r0aux)
             aaux=cubic_interp_a(r0aux)
             T0aux[~np.isfinite(T0aux)]=0
             aaux[~np.isfinite(aaux)]=0
-
             Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
             aproj[i]=trapezoid(aaux*np.cos(theta)**(-2), x=theta)/trapezoid(np.cos(theta)**(-2), x=theta)
+
         self.R=R
         self.Teproj=Teproj
         self.aproj=aproj
@@ -774,7 +780,7 @@ class simulation:
             f4861=self.linefitdict['4861_flux']
 
             O3=pn.Atom('O',3)
-            self.OppH=O3.getIonAbundance(int_ratio=100*(f5007+f4363)/f4861, tem=self.linefitdict['TeO3'], den=self.linefitdict['neO2'], wave=5007, Hbeta=100)
+            self.OppH=O3.getIonAbundance(int_ratio=100*(f5007)/f4861, tem=self.linefitdict['TeO3'], den=self.linefitdict['neO2'], wave=5007, Hbeta=100)
             #print('O++/O = {:5.5e}'.format(Opp_abund))
 
         elif vals==3726:
@@ -783,7 +789,7 @@ class simulation:
             f4861=self.linefitdict['4861_flux']
 
             O2=pn.Atom('O',2)
-            self.OppH=O2.getIonAbundance(int_ratio=100*(f3726+f3729)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
+            self.OppH=O2.getIonAbundance(int_ratio=100*(f3726)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
             #print('O++/O = {:5.5e}'.format(Opp_abund))
 
 ##################################################################### Plotting methods ##############################################
@@ -977,6 +983,23 @@ def gaussian(wave,flux,mean,sd):
     '''
     return flux/(np.sqrt(2*np.pi)*sd)*np.exp((wave-mean)**2/(-2*sd**2))
 
+'''
+def double_gaussian(wave1,flux1,mean1,sd1, wave2,flux2,mean2, sd1):
+    
+    #This function evaluates a 1D Gaussian
+    #
+    #Input:
+    #wave=wavelength array(1D numpy array)
+    #flux=line flux (float)
+    #mean=line centroid (float)
+    #sd=1 sigma line width (float) 
+
+    #Output:
+    #gaussian profile (1D numpy array)
+   
+    return flux/(np.sqrt(2*np.pi)*sd)*np.exp((wave-mean)**2/(-2*sd**2))
+'''
+
 def error_func(wave, gaussian, popt, pcov, e=1e-7):
     
     '''
@@ -1032,6 +1055,7 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=5, plot=True, plotout='linefit
         popt=np.array([-99, p0[1], p0[2]])
         pcov=np.zeros((3,3))
         pcov[0,0]=np.sum(error[sel]**2)
+
     if plot==True:
         xm=np.arange(wave[sel][0], wave[sel][-1], 0.01)
         sigma = error_func(xm, gaussian, popt, pcov)
