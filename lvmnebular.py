@@ -695,7 +695,7 @@ class simulation:
             plt.savefig(plotdir+'/'+lineid+'.png')
             plt.show() 
 
-    def pertsim(self, npoints=30, dim=3, n=3, k0=0.5, dk0=0.05 ):
+    def pertsim(self, npoints=90, dim=3, n=3, k0=0.5, dk0=0.05 ):
        
         '''
         This function will contain the perturbed line emmissivities for each line Id, 
@@ -727,7 +727,7 @@ class simulation:
             for slice in new_field:
                 writer.append_data(slice)
 
-    def projectedTe(self, a0, n=100):
+    def projectedTe(self, a0, n=1000):
 
         #loading true 3D Radius (108 values)
         r0=self.vals[0]
@@ -743,29 +743,43 @@ class simulation:
         cubic_interp_T0 = interp1d(r0, T0, kind='cubic', axis=-1, bounds_error=False)
         cubic_interp_a  = interp1d(r0, a, kind='cubic', axis=-1, bounds_error=False)
 
-        R=np.linspace(0, np.max(r0),100) # on-sky projected radius
+        R=np.linspace(0, np.max(r0), n) # on-sky projected radius
         Teproj=np.zeros_like(R) # on-sky projected temperature
-        #Teproj_simp=np.zeros_like(R) # on-sky projected temperature
         aproj=np.zeros_like(R)
 
-    
         for i,Ri in enumerate(R):
-            
+
             if np.any(Ri > np.min(r0)):
                 theta_max=np.arccos(Ri/np.max(R))*0.9999999
                 theta=np.linspace(-theta_max, theta_max, n)             
-            else:
-                theta_max=np.arccos(Ri/np.max(R))*0.9999999
-                theta1_max=np.arccos(Ri/np.min(r0))*0.9999999
-                theta=np.linspace(theta1_max, theta_max, n)
                             
-            r0aux=Ri/np.cos(theta)
-            T0aux=cubic_interp_T0(r0aux)
-            aaux=cubic_interp_a(r0aux)
-            T0aux[~np.isfinite(T0aux)]=0
-            aaux[~np.isfinite(aaux)]=0
-            Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
-            aproj[i]=trapezoid(aaux*np.cos(theta)**(-2), x=theta)/trapezoid(np.cos(theta)**(-2), x=theta)
+                r0aux=Ri/np.cos(theta)
+                T0aux=cubic_interp_T0(r0aux)
+                aaux=cubic_interp_a(r0aux)
+                T0aux[~np.isfinite(T0aux)]=0
+                aaux[~np.isfinite(aaux)]=0
+                Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
+                aproj[i]=trapezoid(aaux*np.cos(theta)**(-2), x=theta)/trapezoid(np.cos(theta)**(-2), x=theta)
+
+
+            elif np.any(Ri>0) and np.any(Ri<= np.min(r0)):
+                theta_max=np.arccos(Ri/np.max(R))*0.9999999
+                theta_min=np.arccos(Ri/np.min(r0))*0.9999999 
+                theta=np.linspace(theta_min, theta_max, n)             
+                            
+                r0aux=Ri/np.cos(theta)
+                T0aux=cubic_interp_T0(r0aux)
+                aaux=cubic_interp_a(r0aux)
+                T0aux[~np.isfinite(T0aux)]=0
+                aaux[~np.isfinite(aaux)]=0
+                Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
+                aproj[i]=trapezoid(aaux*np.cos(theta)**(-2), x=theta)/trapezoid(np.cos(theta)**(-2), x=theta)
+        
+            #else:
+            #    
+            #    limit=np.linspace(np.min(r0), np.max(R),n)
+            #    Teproj[i]=np.sum(T0*a, axis=-1)/np.sum(a, axis=-1)
+            #    aproj[i]=np.sum(a, axis=-1)     
 
         self.R=R
         self.Teproj=Teproj
@@ -984,20 +998,24 @@ def gaussian(wave,flux,mean,sd):
     return flux/(np.sqrt(2*np.pi)*sd)*np.exp((wave-mean)**2/(-2*sd**2))
 
 '''
-def double_gaussian(wave1,flux1,mean1,sd1, wave2,flux2,mean2, sd1):
-    
+def double_gaussian(wave, a1, mean1, sd1, a2, mean2, sd2):
+        
     #This function evaluates a 1D Gaussian
     #
     #Input:
     #wave=wavelength array(1D numpy array)
-    #flux=line flux (float)
+    #flux=line flux (float) #a
     #mean=line centroid (float)
     #sd=1 sigma line width (float) 
 
     #Output:
     #gaussian profile (1D numpy array)
    
-    return flux/(np.sqrt(2*np.pi)*sd)*np.exp((wave-mean)**2/(-2*sd**2))
+    gaussian1 = a1 / (np.sqrt(2 * np.pi) * sd1) * np.exp(-(wave - mean1) ** 2 / (2 * sd1 ** 2))
+    gaussian2 = a2 / (np.sqrt(2 * np.pi) * sd2) * np.exp(-(wave - mean2) ** 2 / (2 * sd2 ** 2))
+    return gaussian1 + gaussian2
+
+    #return ((flux1/(np.sqrt(2*np.pi)*sd1)*np.exp((wave1-mean1)**2/(-2*sd1**2))+ (flux2/(np.sqrt(2*np.pi)*sd2)*np.exp((wave2-mean2)**2/(-2*sd2**2)))
 '''
 
 def error_func(wave, gaussian, popt, pcov, e=1e-7):
@@ -1056,7 +1074,7 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=5, plot=True, plotout='linefit
         pcov=np.zeros((3,3))
         pcov[0,0]=np.sum(error[sel]**2)
 
-    if plot==True:
+    if plot:
         xm=np.arange(wave[sel][0], wave[sel][-1], 0.01)
         sigma = error_func(xm, gaussian, popt, pcov)
         fig = plt.figure()
