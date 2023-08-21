@@ -164,7 +164,7 @@ class simulation:
         drbin: no. of bins (int, default=20)
         
 
-        Output:
+       returns:
         A table named self.linefitdict which contains ra, dec and fiber Id for each fiber; flux, flux_err, wavelength, wavelength_err, sigma and sigma_err for each line in lines0.
         
         '''
@@ -290,7 +290,7 @@ class simulation:
         neO2: ne from 3726/3729 ; Te=TeN2
         neS2: ne from 6717/6731 ; Te=TeN2
 
-        Input:
+        returns:
 
         niter: number of MC realizations used to get errors on temperature and density, default is niter=10 (int)
         bin: if True work on binned spaxels line fluxes, if False (default) work on native spaxels line fluxes (bool)
@@ -474,7 +474,7 @@ class simulation:
         rbinmax:max radius for binning(float)
         drbin: no. of bins (int)
         
-        Output:
+        returns:
         Binned spectra for lineflux in each spaxel
         '''
         self.simfile = self.datadir+self.simname+'/outputs/'+self.simname+'_linear_full_'+str(int(self.exptime))+'_flux.fits'
@@ -542,7 +542,7 @@ class simulation:
         targetsnr: The desired minimum snr (int; default is 100)
         lineid: rest frame wavelength of emission lines
 
-        Output:
+        Returns:
         Radially binned flux, error spectrum with constant snr
         '''
         if self.linefitdict is None:
@@ -631,7 +631,7 @@ class simulation:
         lineid: rest frame wavelength of emission lines
         label: used to put title of plot
 
-        Output:
+        Returns:
         Binned flux, error spectrum in each spaxel.
         '''
 
@@ -705,7 +705,7 @@ class simulation:
 
 
 
-        Output:
+        Returns:
 
         '''
         
@@ -873,7 +873,7 @@ class simulation:
         title: Title of maps (str)
         output:Output names of the plot maps. (str)
 
-        Output: 
+        Returns: 
         Plot out radial profiles of Te and ne.  
         
         '''
@@ -1008,7 +1008,7 @@ def double_gaussian(wave, a1, mean1, sd1, a2, mean2, sd2):
     #mean=line centroid (float)
     #sd=1 sigma line width (float) 
 
-    #Output:
+    #returns:
     #gaussian profile (1D numpy array)
    
     gaussian1 = a1 / (np.sqrt(2 * np.pi) * sd1) * np.exp(-(wave - mean1) ** 2 / (2 * sd1 ** 2))
@@ -1059,7 +1059,7 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=5, plot=True, plotout='linefit
     error: flux error array(1D numpy array)
     lwave: initial approximation (1D numpy array)
     
-    Output: 
+    Returns: 
     optimal and covarience parameters, popt and pcov.
     
     ''' 
