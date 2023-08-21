@@ -775,11 +775,10 @@ class simulation:
                 Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
                 aproj[i]=trapezoid(aaux*np.cos(theta)**(-2), x=theta)/trapezoid(np.cos(theta)**(-2), x=theta)
         
-            #else:
-            #    
-            #    limit=np.linspace(np.min(r0), np.max(R),n)
-            #    Teproj[i]=np.sum(T0*a, axis=-1)/np.sum(a, axis=-1)
-            #    aproj[i]=np.sum(a, axis=-1)     
+            else:
+                
+                Teproj[i]=np.sum(T0*a, axis=-1)/np.sum(a, axis=-1)
+                aproj[i]=np.sum(a, axis=-1)/len(a)    
 
         self.R=R
         self.Teproj=Teproj
