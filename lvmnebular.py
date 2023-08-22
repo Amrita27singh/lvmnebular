@@ -778,7 +778,7 @@ class simulation:
             else:
                 
                 Teproj[i]=np.sum(T0*a, axis=-1)/np.sum(a, axis=-1)
-                aproj[i]=np.sum(a, axis=-1)/len(a)    
+                aproj[i]=np.average(a, axis=-1)   
 
         self.R=R
         self.Teproj=Teproj
@@ -802,7 +802,7 @@ class simulation:
             f4861=self.linefitdict['4861_flux']
 
             O2=pn.Atom('O',2)
-            self.OppH=O2.getIonAbundance(int_ratio=100*(f3726)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
+            self.OpH=O2.getIonAbundance(int_ratio=100*(f3726)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
             #print('O++/O = {:5.5e}'.format(Opp_abund))
 
 ##################################################################### Plotting methods ##############################################
