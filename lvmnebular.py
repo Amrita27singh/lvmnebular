@@ -699,7 +699,7 @@ class simulation:
        
         '''
         This function will contain the perturbed line emmissivities for each line Id, 
-        it is a 4D array containing the line emissivities, Te, Ne and line ids.
+        it is a 4D array containing the line emissivities at each value of x, y and z coordinates, and line ids.
 
         Input:
 
@@ -783,7 +783,6 @@ class simulation:
         self.R=R
         self.Teproj=Teproj
         self.aproj=aproj
-
 
     def chem_abund(self, vals):
 
