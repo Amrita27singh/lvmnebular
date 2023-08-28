@@ -63,6 +63,7 @@ Circle = [{'type': 'Circle', 'max_brightness': 1e-17, 'radius': 18, 'sys_velocit
           'model_type': 'cloudy', 'offset_RA':0, 'offset_DEC':0}]
 
 my_lvmfield.add_nebulae(bubble, save_nebulae='testneb_tutorial3_ex1.fits')
+
 my_lvmfield.show(percentile=98, fibers=bundle.fibers)
 
 #Observation

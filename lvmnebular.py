@@ -273,7 +273,8 @@ class simulation:
 
             self.linefitdict=Table(self.linefitdict)
             self.linefitdict.write(outfilename, overwrite=True)
-            
+
+
     def runpyneb(self, niter=4, pertsim=False):
 
         '''
@@ -361,20 +362,21 @@ class simulation:
         self.linefitdict['TeO2err']=self.TeO2err
         
         # TO3 temperature diagnostic
-        ne=100
-        TO3=np.zeros((self.nfib, niter))
+        ne = 100
+        TO3 = np.zeros((self.nfib, niter))
+        
         for i in range (niter):
 
-            f4363=self.linefitdict['4363_flux']+np.random.randn(self.nfib)*self.linefitdict['4363_flux_err']
-            f5007=self.linefitdict['5007_flux']+np.random.randn(self.nfib)*self.linefitdict['5007_flux_err']
-            TO3[:,i]=O3.getTemDen((f4363)/(f5007), den=ne, wave1=4363, wave2=5007)
+            f4363 = self.linefitdict['4363_flux']+np.random.randn(self.nfib)*self.linefitdict['4363_flux_err']
+            f5007 = self.linefitdict['5007_flux']+np.random.randn(self.nfib)*self.linefitdict['5007_flux_err']
+            TO3[:,i] = O3.getTemDen((f4363)/(f5007), den=ne, wave1=4363, wave2=5007)
 
+    
         self.TeO3 = np.nanmean(TO3, axis=1)
         self.TeO3err = np.nanstd(TO3, axis=1)
 
         self.linefitdict['TeO3']=self.TeO3
         self.linefitdict['TeO3err']=self.TeO3err
-        
 
         # TN2 temperature diagnostic
         ne=100
@@ -464,6 +466,31 @@ class simulation:
         self.linefitdict['delta_dec']=self.linefitdict['delta_dec']
 
         self.linefitdict.write('diag_Temp_Den.fits', overwrite=True)
+
+    def Integrated_meas(self):
+        
+            O3=pn.Atom('O',3)
+            ne = 100
+            print(len(self.fiberdata))
+            int_f4363 = 0
+            int_f5007 = 0
+            for i in range(len(self.fiberdata)):
+           
+                int_f4363 += self.linefitdict['4363_flux']+np.random.randn(self.nfib)*self.linefitdict['4363_flux_err']
+                int_f5007 += self.linefitdict['5007_flux']+np.random.randn(self.nfib)*self.linefitdict['5007_flux_err']
+
+
+            Int_TO3 = O3.getTemDen(np.sum(int_f4363)/np.sum(int_f5007), den=ne, wave1=4363, wave2=5007)
+            self.Int_TeO3 = np.nanmean(Int_TO3)
+            self.Int_TeO3err = np.nanstd(Int_TO3)
+
+            self.linefitdict['Int_TeO3']=self.Int_TeO3
+            self.linefitdict['Int_TeO3err']=self.Int_TeO3err
+            print(np.sum(int_f4363), np.sum(int_f5007), Int_TO3)
+            
+            ######################################## Add for integrated Abundance measurements of [OIII] #####################################
+
+
 
     def radialbin(self, rbinmax, drbin, pertsim=False):
 
@@ -793,8 +820,7 @@ class simulation:
 
             O3=pn.Atom('O',3)
             self.OppH=O3.getIonAbundance(int_ratio=100*(f5007)/f4861, tem=self.linefitdict['TeO3'], den=self.linefitdict['neO2'], wave=5007, Hbeta=100)
-            #print('O++/O = {:5.5e}'.format(Opp_abund))
-
+            
         elif vals==3726:
             f3726=self.linefitdict['3726_flux']
             f3729=self.linefitdict['3729_flux']
@@ -802,7 +828,6 @@ class simulation:
 
             O2=pn.Atom('O',2)
             self.OpH=O2.getIonAbundance(int_ratio=100*(f3726)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
-            #print('O++/O = {:5.5e}'.format(Opp_abund))
 
 ##################################################################### Plotting methods ##############################################
 
