@@ -118,6 +118,10 @@ class simulation:
         self.int_TN2=None
         self.int_NpH=None
         self.NpH = None
+        self.SppH = None
+        self.int_TS3 = None
+        self.int_TS2 = None
+        self.int_SpH = None
 
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
 
@@ -479,6 +483,8 @@ class simulation:
             O3=pn.Atom('O',3)
             O2=pn.Atom('O',2)
             N2=pn.Atom('N',2)
+            S3=pn.Atom('S',3)
+            S2=pn.Atom('S',2)
             ne = 100
 
             int_f4363 = 0
@@ -492,14 +498,23 @@ class simulation:
             int_f7320 = 0
             int_f7330 = 0
             int_f7331 = 0
+
             int_f5755 = 0
             int_f6584 = 0
+
+            int_f6312 = 0
+            int_f9069 = 0
+            int_f9532 = 0
+
+            int_f4069 = 0
+            int_f4076 = 0
+            int_f6717 = 0
+            int_f6731 = 0
 
             for i in range(len(self.fiberdata)):
                 #[OIII]
                 int_f4363 += self.linefitdict['4363_flux'][i]
                 int_f5007 += self.linefitdict['5007_flux'][i]
-
                 int_f4861 += self.linefitdict['4861_flux'][i]
 
                 #[OII]
@@ -514,15 +529,37 @@ class simulation:
                 int_f5755 += self.linefitdict['5755_flux'][i]
                 int_f6584 += self.linefitdict['6584_flux'][i]
 
+                #[SIII]
+                int_f6312 += self.linefitdict['6312_flux'][i]
+                int_f9069 += self.linefitdict['9069_flux'][i]
+                int_f9532 += self.linefitdict['9532_flux'][i]
+            
+                #[SII]
+                int_f4069 += self.linefitdict['4069_flux'][i]
+                int_f4076 += self.linefitdict['4076_flux'][i]
+                int_f6717 += self.linefitdict['6717_flux'][i]
+                int_f6731 += self.linefitdict['6731_flux'][i]
 
+
+            #[OIII]
             self.int_TO3 = O3.getTemDen(int_f4363/int_f5007, den=ne, wave1=4363, wave2=5007)
             self.int_OppH=O3.getIonAbundance(int_ratio=100*(int_f5007)/int_f4861, tem= self.int_TO3, den= ne, wave=5007, Hbeta=100)
 
+            #[OII]
             self.int_TO2 = O2.getTemDen((int_f3726+int_f3729)/(int_f7320+int_f7331+int_f7319+int_f7330), den=ne, wave1=3727, wave2=7325)
             self.int_OpH=O2.getIonAbundance(int_ratio=100*(int_f3726)/int_f4861, tem=self.int_TO2, den=ne, wave=3726, Hbeta=100)
 
+            #[NII]
             self.int_TN2 = N2.getTemDen(int_f5755/int_f6584, den=ne, wave1=5755, wave2=6584)
             self.int_NpH=N2.getIonAbundance(int_ratio=100*(int_f6584)/int_f4861, tem=self.int_TN2, den=ne, wave=6584, Hbeta=100)
+            
+            #[SIII]
+            self.int_TS3 = S3.getTemDen(int_f6312/int_f9069, den=ne, wave1=6312, wave2=9069)
+            self.int_SppH = S3.getIonAbundance(int_ratio=100*(int_f9532)/int_f4861, tem= self.int_TS3, den= ne, wave=9532, Hbeta=100)
+
+            #[SII]
+            self.int_TS2 = S2.getTemDen((int_f4069+int_f4076)/(int_f6717+int_f6731), den=ne, wave1=4072, wave2=6720)
+            self.int_SpH = S2.getIonAbundance(int_ratio=100*(int_f6731)/int_f4861, tem= self.int_TS2, den= ne, wave=6731, Hbeta=100)
 
             #print(np.sum(int_f4363), np.sum(int_f5007), "int_TO3:", self.int_TO3, "int_OppH:", self.int_OppH, "int_TO2:", self.int_TO2, "int_OpH:", self.int_OpH)
 
@@ -847,10 +884,11 @@ class simulation:
 
     def chem_abund(self, vals):
 
-        f4861=self.linefitdict['4861_flux']
+        f4861=self.linefitdict['4861_flux']  
+
+        # intensity ratio of strong lines with H-beta
 
         if vals==5007:
-            f4363=self.linefitdict['4363_flux']
             f5007=self.linefitdict['5007_flux']
             
             O3=pn.Atom('O',3)
@@ -866,7 +904,19 @@ class simulation:
             f6584=self.linefitdict['6584_flux']
 
             N2=pn.Atom('N',2)
-            self.NpH=N2.getIonAbundance(int_ratio=100*(f6584)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
+            self.NpH=N2.getIonAbundance(int_ratio=100*(f6584)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=6584, Hbeta=100)
+
+        elif vals==9069:
+            f9532=self.linefitdict['9532_flux']
+
+            S3 = pn.Atom('S',3)
+            self.SppH = S3.getIonAbundance(int_ratio=100*(f9532)/f4861, tem=self.linefitdict['TeS3'], den=self.linefitdict['neO2'], wave=9532, Hbeta=100)  
+
+        elif vals==6731:
+            f6731=self.linefitdict['6731_flux']
+
+            S2 = pn.Atom('S',2)
+            self.SpH = S2.getIonAbundance(int_ratio=100*(f6731)/f4861, tem=self.linefitdict['TeS2'], den=self.linefitdict['neO2'], wave=6731, Hbeta=100)  
 
 ##################################################################### Plotting methods ##############################################
 
