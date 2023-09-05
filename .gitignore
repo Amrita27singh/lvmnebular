@@ -2,7 +2,7 @@
 #ignoring all the output fits
 /*.fits
 ./*/*/*.fits
-
+/*.gif
 ./*/*.fits
 
 #diffrent exposure time output files
