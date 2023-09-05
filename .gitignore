@@ -1,6 +1,7 @@
 
 #ignoring all the output fits
 /*.fits
+./*/*/*.fits
 
 ./*/*.fits
 
@@ -21,3 +22,5 @@ shell*
 Bubble*
 lvmnebular.cpython*
 __pycache__/lvmnebular.cpython-38.pyc
+*.fits
+Perturbation*
