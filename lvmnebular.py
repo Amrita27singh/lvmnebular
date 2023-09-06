@@ -565,9 +565,9 @@ class simulation:
 
     def avg_Te(self, ion):    #reproducing avergae temperature from Eduardo's 2023 Nature paper
         
-        avgTe = np.average(self.vals[1]*self.vals[2]*ion)/np.average(self.vals[2]*ion)
-        
+        avgTe = np.sum(self.vals[1]*self.vals[2]*ion)/np.sum(self.vals[2]*ion)                
         self.avgTe = avgTe
+        
 
     def radialbin(self, rbinmax, drbin, pertsim=False):
 
