@@ -562,13 +562,11 @@ class simulation:
             self.int_TS2 = S2.getTemDen((int_f4069+int_f4076)/(int_f6717+int_f6731), den=ne, wave1=4072, wave2=6720)
             self.int_SpH = S2.getIonAbundance(int_ratio=100*(int_f6731)/int_f4861, tem= self.int_TS2, den= ne, wave=6731, Hbeta=100)
 
-
     def avg_Te(self, ion):    #reproducing avergae temperature from Eduardo's 2023 Nature paper
         
         avgTe = np.sum(self.vals[1]*self.vals[2]*ion)/np.sum(self.vals[2]*ion)                
         self.avgTe = avgTe
         
-
     def radialbin(self, rbinmax, drbin, pertsim=False):
 
         '''
