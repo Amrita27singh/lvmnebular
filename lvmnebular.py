@@ -301,7 +301,7 @@ class simulation:
         TeS3: Te from "[SIII] 6312/9069"   ; ne=100 cm-3
 
         neO2: ne from 3726/3729 ; Te=TeN2
-        neS2: ne from 6717/6731 ; Te=TeN2
+        neS2: ne from 6716/6731 ; Te=TeN2
 
         returns:
 
@@ -414,10 +414,10 @@ class simulation:
 
             f4069=self.linefitdict['4069_flux']+np.random.randn(self.nfib)*self.linefitdict['4069_flux_err']
             f4076=self.linefitdict['4076_flux']+np.random.randn(self.nfib)*self.linefitdict['4076_flux_err']
-            f6717=self.linefitdict['6717_flux']+np.random.randn(self.nfib)*self.linefitdict['6717_flux_err']
+            f6716=self.linefitdict['6716_flux']+np.random.randn(self.nfib)*self.linefitdict['6716_flux_err']
             f6731=self.linefitdict['6731_flux']+np.random.randn(self.nfib)*self.linefitdict['6731_flux_err']
-            TS2[:,i]=S2.getTemDen((f4069+f4076)/(f6717+f6731), den=ne, wave1=4072, wave2=6720)
-
+            TS2[:,i]=S2.getTemDen((f4069+f4076)/(f6716+f6731), den=ne, wave1=4072, wave2=6723)
+            
         self.TeS2 = np.nanmean(TS2, axis=1)
         self.TeS2err = np.nanstd(TS2, axis=1)
 
@@ -463,9 +463,9 @@ class simulation:
         NS2=np.zeros((self.nfib, niter))
         for i in range (niter):
 
-            f6717=self.linefitdict['6717_flux']+np.random.randn(self.nfib)*self.linefitdict['6717_flux_err']
+            f6716=self.linefitdict['6716_flux']+np.random.randn(self.nfib)*self.linefitdict['6716_flux_err']
             f6731=self.linefitdict['6731_flux']+np.random.randn(self.nfib)*self.linefitdict['6731_flux_err']
-            NS2[:,i]=S2.getTemDen(f6717/f6731, tem=TN2[:,i], wave1=6731, wave2=6717)
+            NS2[:,i]=S2.getTemDen(f6716/f6731, tem=TN2[:,i], wave1=6731, wave2=6716)
 
         self.neS2 = np.nanmean(NS2, axis=1)
         self.neS2err = np.nanstd(NS2, axis=1)
@@ -509,7 +509,7 @@ class simulation:
 
             int_f4069 = 0
             int_f4076 = 0
-            int_f6717 = 0
+            int_f6716 = 0
             int_f6731 = 0
 
             for i in range(len(self.fiberdata)):
@@ -538,7 +538,7 @@ class simulation:
                 #[SII]
                 int_f4069 += self.linefitdict['4069_flux'][i]
                 int_f4076 += self.linefitdict['4076_flux'][i]
-                int_f6717 += self.linefitdict['6717_flux'][i]
+                int_f6716 += self.linefitdict['6716_flux'][i]
                 int_f6731 += self.linefitdict['6731_flux'][i]
 
 
@@ -559,7 +559,7 @@ class simulation:
             self.int_SppH = S3.getIonAbundance(int_ratio=100*(int_f9532)/int_f4861, tem= self.int_TS3, den= ne, wave=9532, Hbeta=100)
 
             #[SII]
-            self.int_TS2 = S2.getTemDen((int_f4069+int_f4076)/(int_f6717+int_f6731), den=ne, wave1=4072, wave2=6720)
+            self.int_TS2 = S2.getTemDen((int_f4069+int_f4076)/(int_f6716+int_f6731), den=ne, wave1=4072, wave2=6720)
             self.int_SpH = S2.getIonAbundance(int_ratio=100*(int_f6731)/int_f4861, tem= self.int_TS2, den= ne, wave=6731, Hbeta=100)
 
     def avg_Te(self, ion):    #reproducing avergae temperature from Eduardo's 2023 Nature paper
@@ -1080,7 +1080,7 @@ class simulation:
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
         rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
 
-        fig, ax = plt.subplots(1, 1, sharex=True, figsize=(8,5))
+        fig, ax = plt.subplots(1, 1, sharex=True, figsize=(12,8))
         ax.plot(rad, z[sel], '.', label='data') #Te from Pyneb
         ax.plot(self.vals[0], val1, c='grey', label='True profile') #true Te from model
         ax.plot(self.R, self.Teproj, color='orange', label='Projected Te') #Projected Te 
