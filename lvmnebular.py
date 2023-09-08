@@ -902,7 +902,7 @@ class simulation:
             f3726=self.linefitdict['3726_flux']
 
             O2=pn.Atom('O',2)
-            self.OpH=O2.getIonAbundance(int_ratio=100*(f3726)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
+            self.OpH=O2.getIonAbundance(int_ratio=100*(f3726)/f4861, tem=self.linefitdict['TeO2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
 
         elif vals==6584:
             f6584=self.linefitdict['6584_flux']

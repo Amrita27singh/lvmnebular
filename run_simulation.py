@@ -41,7 +41,7 @@ sys_vel = 20 #* u.km / u.s
 turbulent_sigma = 15 #* u.km / u.s
 preserve_kinematics = False
 
-name='Bubble_v2_5e-14_z_0.5'
+name='Bubble_v2_1e-11'
 unit_ra = u.degree
 unit_dec = u.degree
 unit_size = u.arcmin
@@ -53,14 +53,11 @@ my_lvmfield = LVMField(ra=ra, dec=dec, size=fov_size, pxsize=fov_pixel,
 
 
 
-bubble = [{'type': 'Bubble', 'max_brightness':5e-14, 'thickness': 0.8, 'radius': 18, 'expansion_velocity': 10, 'sys_velocity': sys_vel, 
+bubble = [{'type': 'Bubble', 'max_brightness':1e-11, 'thickness': 0.8, 'radius': 18, 'expansion_velocity': 10, 'sys_velocity': sys_vel, 
           'distance': distance,
-          'model_params': {'Z': 0.5, 'Teff': 40000, 'nH': 100, 'qH': 50.0, 'Geometry': 'Shell'},
+          'model_params': {'Z': 1.0, 'Teff': 40000, 'nH': 100, 'qH': 50.0, 'Geometry': 'Shell'},
           'model_type': 'cloudy', 'offset_RA':0, 'offset_DEC':0}]
-Circle = [{'type': 'Circle', 'max_brightness': 1e-17, 'radius': 18, 'sys_velocity': sys_vel, 
-          'distance': distance,
-          'model_params': {'Z': 1., 'Teff': 40000, 'nH': 100, 'qH': 50.0, 'Geometry': 'Shell'},
-          'model_type': 'cloudy', 'offset_RA':0, 'offset_DEC':0}]
+
 
 my_lvmfield.add_nebulae(bubble, save_nebulae='testneb_tutorial3_ex1.fits')
 
