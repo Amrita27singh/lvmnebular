@@ -12,8 +12,7 @@ import matplotlib.tri as tri
 from vorbin.voronoi_2d_binning import voronoi_2d_binning
 from scipy.interpolate import interp1d
 from scipy.integrate import trapezoid
-import astropy.units as u
-
+import astropy.units as unit
 
 class simulation:
     '''
@@ -367,14 +366,11 @@ class simulation:
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
-        #print(self.TeO2)
-
         
         self.linefitdict['TeO2']=self.TeO2
         self.linefitdict['TeO2err']=self.TeO2err
         
         # TO3 temperature diagnostic
-        ne = 100
         TO3 = np.zeros((self.nfib, niter))
         
         for i in range (niter):
@@ -391,7 +387,6 @@ class simulation:
         self.linefitdict['TeO3err']=self.TeO3err
 
         # TN2 temperature diagnostic
-        ne=100
         TN2=np.zeros((self.nfib, niter))
         for i in range (niter):
 
@@ -401,14 +396,12 @@ class simulation:
 
         self.TeN2 = np.nanmean(TN2, axis=1)
         self.TeN2err = np.nanstd(TN2, axis=1)
-
         
         self.linefitdict['TeN2']=self.TeN2
-        self.linefitdict['TeN2err']=self.TeN2err
-        
+        self.linefitdict['TeN2err']=self.TeN2err        
 
         # TS2 temperature diagnostic
-        ne=100
+        
         TS2=np.zeros((self.nfib, niter))
         for i in range (niter):
 
@@ -416,18 +409,15 @@ class simulation:
             f4076=self.linefitdict['4076_flux']+np.random.randn(self.nfib)*self.linefitdict['4076_flux_err']
             f6716=self.linefitdict['6716_flux']+np.random.randn(self.nfib)*self.linefitdict['6716_flux_err']
             f6731=self.linefitdict['6731_flux']+np.random.randn(self.nfib)*self.linefitdict['6731_flux_err']
-            TS2[:,i]=S2.getTemDen((f4069+f4076)/(f6716+f6731), den=ne, wave1=4072, wave2=6723)
+            TS2[:,i]=S2.getTemDen((f4069+f4076)/(f6716+f6731), den=ne, wave1=4072.5, wave2=6723.5)
             
         self.TeS2 = np.nanmean(TS2, axis=1)
         self.TeS2err = np.nanstd(TS2, axis=1)
-
         
         self.linefitdict['TeS2']=self.TeS2
-        self.linefitdict['TeS2err']=self.TeS2err
-        
+        self.linefitdict['TeS2err']=self.TeS2err       
 
         # TS3 temperature diagnostic
-        ne=100
         TS3=np.zeros((self.nfib, niter))
         for i in range (niter):
 
@@ -559,7 +549,7 @@ class simulation:
             self.int_SppH = S3.getIonAbundance(int_ratio=100*(int_f9532)/int_f4861, tem= self.int_TS3, den= ne, wave=9532, Hbeta=100)
 
             #[SII]
-            self.int_TS2 = S2.getTemDen((int_f4069+int_f4076)/(int_f6716+int_f6731), den=ne, wave1=4072, wave2=6720)
+            self.int_TS2 = S2.getTemDen((int_f4069+int_f4076)/(int_f6716+int_f6731), den=ne, wave1=4072.5, wave2=6723.5)
             self.int_SpH = S2.getIonAbundance(int_ratio=100*(int_f6731)/int_f4861, tem= self.int_TS2, den= ne, wave=6731, Hbeta=100)
 
     def avg_Te(self, ion):    #reproducing avergae temperature from Eduardo's 2023 Nature paper
@@ -837,13 +827,17 @@ class simulation:
         T0=self.vals[1] 
         #loading ionic abundance of NII
         a=a0
+        #loading true electron density
+        ne = self.vals[0]
 
         r0=r0[1:]
         T0=T0[1:]
         a=a[1:]
+        ne=ne[1:]
 
         cubic_interp_T0 = interp1d(r0, T0, kind='cubic', axis=-1, bounds_error=False)
         cubic_interp_a  = interp1d(r0, a, kind='cubic', axis=-1, bounds_error=False)
+        cubic_interp_ne  = interp1d(r0, ne, kind='cubic', axis=-1, bounds_error=False)
 
         R=np.linspace(0, np.max(r0), n) # on-sky projected radius
         Teproj=np.zeros_like(R) # on-sky projected temperature
@@ -858,10 +852,14 @@ class simulation:
                 r0aux=Ri/np.cos(theta)
                 T0aux=cubic_interp_T0(r0aux)
                 aaux=cubic_interp_a(r0aux)
+                neaux=cubic_interp_ne(r0aux)
+
                 T0aux[~np.isfinite(T0aux)]=0
                 aaux[~np.isfinite(aaux)]=0
-                Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
-                aproj[i]=trapezoid(aaux*np.cos(theta)**(-2), x=theta)/trapezoid(np.cos(theta)**(-2), x=theta)
+                neaux[~np.isfinite(neaux)]=0
+
+                Teproj[i]=trapezoid(T0aux*aaux*neaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*neaux*np.cos(theta)**(-2), x=theta)
+                aproj[i]=trapezoid(aaux*neaux*np.cos(theta)**(-2), x=theta)/trapezoid(neaux*np.cos(theta)**(-2), x=theta)
 
 
             elif np.any(Ri>0) and np.any(Ri<= np.min(r0)):
@@ -872,10 +870,14 @@ class simulation:
                 r0aux=Ri/np.cos(theta)
                 T0aux=cubic_interp_T0(r0aux)
                 aaux=cubic_interp_a(r0aux)
+                neaux=cubic_interp_ne(r0aux)
+
                 T0aux[~np.isfinite(T0aux)]=0
                 aaux[~np.isfinite(aaux)]=0
-                Teproj[i]=trapezoid(T0aux*aaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*np.cos(theta)**(-2), x=theta)
-                aproj[i]=trapezoid(aaux*np.cos(theta)**(-2), x=theta)/trapezoid(np.cos(theta)**(-2), x=theta)
+                neaux[~np.isfinite(neaux)]=0
+
+                Teproj[i]=trapezoid(T0aux*aaux*neaux*np.cos(theta)**(-2), x=theta)/trapezoid(aaux*neaux*np.cos(theta)**(-2), x=theta)
+                aproj[i]=trapezoid(aaux*neaux*np.cos(theta)**(-2), x=theta)/trapezoid(neaux*np.cos(theta)**(-2), x=theta)
         
             else:
                 
@@ -924,7 +926,93 @@ class simulation:
 
 ##################################################################### Plotting methods ##############################################
 
-    def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
+#Radius:0, 'Te':1, 'ne':2, 'H+':3, 'O0':4, 'O+':5, 'O++':6, 'N0':7, 'N+':8, 'N++':9, 'S0':10, 'S+':11, 'S++:12
+
+
+def finalplot(self, Te, proj_vals , lines = np.array([4363, 4959, 5007, 4861]), ): 
+    distance=16000 * unit.pc 
+    r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2) 
+    rad=r*distance*np.pi/648000 # converting arcsecs to parsec 
+
+    #O++ abundance 
+    #TeO3=self.linefitdict['TeO3'] 
+
+    self.projectedTe(proj_vals, n=100) 
+    self.chem_abund(5007)
+    self.avg_Te(self.vals[6])
+
+    I_4959=self.linefitdict['4959_flux']
+    I_5007=self.linefitdict['5007_flux']
+    I_4861=self.linefitdict['4861_flux']
+    Th=Te/1e4 
+    
+    Abund_O3=np.log10(np.divide((I_4959+I_5007),I_4861))+6.1868+np.divide(1.2491,Th)-0.5816*np.log10(Th) # from Perez-Montero 2017
+    print('th:', np.nanmean(Th),'\n','12+log10(O++/H+):', np.nanmean(Abund_O3))
+
+    good=self.linefitdict['4363_flux']/self.linefitdict['4363_flux_err']>=3  
+    bad=self.linefitdict['4363_flux']/self.linefitdict['4363_flux_err']<3    
+
+    #relative ionic abundance plots
+    fig, (ax1, ax2, ax)=plt.subplots(3, 1, figsize=(12,12))  
+    ax1.plot(self.vals[0], self.vals[6], color='red', label='relative ionic abund'r'$ O^{++}$')  
+    ax1.plot(self.R, self.aproj, color='orange', label='Projected ionic abund' r'$ O^{++}$')  
+    ax1.axvline(x=11.2, c='red', linestyle='--', label='50% ionization of O to 'r'$ O^{++}$')  
+    ax1.axvline(x=18, c='black', label='50% ionization of H')
+    ax1.axhline(y=np.average(self.vals[6]), c='cyan', linestyle='--', label='avg_rel_ion_abund_$ O^{++}$')  
+
+    ax1.legend(loc='upper right')  
+    ax1.set_ylabel('ionic abund 'r'$ O^{++}$') 
+    ax1.set_title('Rosette neubula simulation: Chemical abundance correlation with electron temperture for [OIII]')
+  
+# Electron temperature plots   
+    ax2.plot(self.vals[0], self.vals[1], color='red', label='True Te')  
+    ax2.plot(self.R, self.Teproj, color='orange', label='Sky_Projected_Te')  
+    ax2.plot(rad[good], TeO3[good], 'o', color='green', label='Te[OIII] goodpix')  
+    ax2.plot(rad[bad], TeO3[bad], 'o', color='green',   label='Te[OIII] badpix', alpha=0.2) 
+    ax2.axhline(y=self.int_TO3, c='cyan', linestyle='--', label='Integrated Te[OIII] measurement')   
+    ax2.axhline(y=self.avgTe, c='blue', linestyle='--', label='Average Te')   
+    
+
+    ax2.set_ylim(5500, 8000)
+    ax2.set_ylabel('Te [OIII] (K)')  
+    ax2.legend()     
+    
+    # O++ ionic abundance  
+    Zmodel= 1.0                                    # cloudy model abundance relative to solar  
+    logOHsun= -3.31                               # solar abundance patter from GASS (Grevesse et al 2010)  
+    logOHmodel = logOHsun + np.log10(Zmodel)      # total Oxygen elemental abundance in the model  
+    logOppHmodel = logOHmodel+np.log10(self.vals[6]) # ionic abundance of O++ in the model  
+    logOppHproj = logOHmodel+np.log10(self.aproj)    # ionic abundance of O++ in the model  
+    
+    ax.plot(self.vals[0], 12+logOppHmodel, color='orange', label='model ionic abund')  
+    ax.plot(self.R, 12+logOppHproj, color='magenta', label='Projected model ionic abund')  
+    ax.set_ylim(5,9)  
+    ax.axhline(y=12+np.log10(self.int_OppH), c='cyan', linestyle='--', label='Integrated [OIII] Abundance measurement')    
+
+    ax.plot(rad[good], Abund_O3[good], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (goodpix)')  
+    ax.plot(rad[bad], Abund_O3[bad], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (badpix)', alpha=0.2)  
+    ax.plot(rad[good], 12+np.log10(self.OppH)[good], 'o', color='red', label='This work goodpix')  
+    ax.plot(rad[bad], 12+np.log10(self.OppH)[bad], 'o', color='red', label='This work badpix', alpha=0.2)  
+    
+    ax.set_xlabel('Radius (pc)')  
+    #ax.set_ylabel('12+log10(O++/H+)') 
+    ax.set_ylabel(r'$12+\log(\frac{O^{++}}{H^+})$') 
+    ax.legend(loc='lower left')     
+    
+    ax1.set_position([0.125, 0.8, 0.775, 0.26])  # [left, bottom, width, height]  
+    ax2.set_position([0.125, 0.5, 0.775, 0.3])   
+    ax.set_position([0.125, 0.2, 0.775, 0.3])  
+
+    plotdir=self.datadir+self.simname+'/'+'Abundance_plots_'+self.simname +'/'
+    if (not os.path.isdir(plotdir)):
+        os.mkdir(plotdir) 
+
+    plt.savefig('/'+plotdir+'/'+'TeO3_chem_abundO3_vs_R_present.png', dpi=200)
+    #plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_snbinned/Bubble_v2_5e-14_snbinned_plotprofile/snbin_TeO3_chem_abundO3_vs_R.png', dpi=300)  
+    plt.show()  
+
+
+def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
 
             '''
             This function will plot 1 D maps of Te, ne and error on Te and ne.
@@ -975,8 +1063,8 @@ class simulation:
             ax.set_ylabel('Dec')
             ax.axis('equal')
             plt.savefig(plotdir+'/'+output+'.png', dpi=200)
-        
-    def plotprofile(self, z, min, max, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
+    
+def plotprofile(self, z, min, max, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
 
         '''
         This function will plot 2 D radial profiles of Te and ne.
@@ -1017,7 +1105,7 @@ class simulation:
         
         sel=np.isfinite(z)  
             
-        distance=16000 #u.pc
+        distance=16000 #self.pc
 
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
         rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
@@ -1029,8 +1117,8 @@ class simulation:
         ax.set_xlabel('Radius (parsec)')
         ax.legend()
         plt.savefig(plotdir+'/'+output+'_rad.png', dpi=200)      
- 
-    def overplotprofile(self, z, val1, val2, min, max, x, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
+
+def overplotprofile(self, z, val1, val2, min, max, x, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
 
         '''
         This function will plot 2 D radial profiles of Te and ne.
@@ -1076,7 +1164,7 @@ class simulation:
         
         sel=np.isfinite(z) 
 
-        distance=16000 #u.pc
+        distance=16000 #self.pc
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
         rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
 
@@ -1114,7 +1202,7 @@ def gaussian(wave,flux,mean,sd):
     return flux/(np.sqrt(2*np.pi)*sd)*np.exp((wave-mean)**2/(-2*sd**2))
 
 '''
-def double_gaussian(wave, a1, mean1, sd1, a2, mean2, sd2):
+def double_gaussian(wave, flux1, mean1, sd1, flux2, mean2, sd2):
         
     #This function evaluates a 1D Gaussian
     #
@@ -1208,6 +1296,7 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=5, plot=True, plotout='linefit
         plt.xlabel("wavelength, $\AA$")
         ax.legend()
         plt.savefig(plotout+'.png')
+
     return popt, pcov
 ########################################################################################################################################
 
