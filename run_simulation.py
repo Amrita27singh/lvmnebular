@@ -41,7 +41,7 @@ sys_vel = 20 #* u.km / u.s
 turbulent_sigma = 15 #* u.km / u.s
 preserve_kinematics = False
 
-name='Bubble_v2_1e-11'
+name='Bubble_v2_1e-8'
 unit_ra = u.degree
 unit_dec = u.degree
 unit_size = u.arcmin
@@ -53,7 +53,7 @@ my_lvmfield = LVMField(ra=ra, dec=dec, size=fov_size, pxsize=fov_pixel,
 
 
 
-bubble = [{'type': 'Bubble', 'max_brightness':1e-11, 'thickness': 0.8, 'radius': 18, 'expansion_velocity': 10, 'sys_velocity': sys_vel, 
+bubble = [{'type': 'Bubble', 'max_brightness':1e-8, 'thickness': 0.8, 'radius': 18, 'expansion_velocity': 10, 'sys_velocity': sys_vel, 
           'distance': distance,
           'model_params': {'Z': 1.0, 'Teff': 40000, 'nH': 100, 'qH': 50.0, 'Geometry': 'Shell'},
           'model_type': 'cloudy', 'offset_RA':0, 'offset_DEC':0}]
