@@ -1043,7 +1043,7 @@ class simulation:
         ax.plot(rad[good], 12+np.log10(chem_abund)[good], 'o', color='red', label='This work goodpix')  
         ax.plot(rad[bad],  12+np.log10(chem_abund)[bad], 'o', color='red', label='This work badpix', alpha=0.2)  
 
-        ax.set_ylim(4.5, 8.5) 
+        ax.set_ylim(4.5, 9) 
 
         ax.set_xlabel('Radius (pc)')  
         ax.set_ylabel(r'$12+\log({'+label+'}/{HII})$') 
@@ -1059,9 +1059,9 @@ class simulation:
         if (not os.path.isdir(plotdir)):
             os.mkdir(plotdir) 
 
-        plt.savefig('/'+plotdir+'/'+outfilename, dpi=300)
+        plt.savefig('/'+plotdir+'/'+outfilename, dpi=300, bbox_inches = 'tight')
         #plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_snbinned/Bubble_v2_5e-14_snbinned_plotprofile/snbin_TeO3_chem_abundO3_vs_R.png', dpi=300)  
-        plt.show()  
+        #plt.show()  
 
     
     def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
