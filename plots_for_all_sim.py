@@ -18,11 +18,9 @@ simname=simname.astype(str)
 
 for i in simname:
 
-    u.loadsim(i,900)           #native simulation
-    #u.loadsim('Bubble_v2_5e-14', 900, vorbin=True) #voronoi simulation
-    #u.loadsim('Bubble_v2_5e-14', 900, snbin=True)  #snbin simulation
-
-    # fitting lines of native simulation spectra
+    u.loadsim(i,900)          
+    
+    # fitting lines 
     u.fitlines(sys_vel=20, lines0= np.array([9532, 9069, 7319, 7320, 7330, 7331, 6731, 6716, 6584, 6563, 6548, 6312, 5755, 5007, 4959, 4861, 4363, 4069, 4076, 3970, 3729, 3726]), radbin=False, vorbin=False, rbinmax=260, drbin=15, loadfile=True, plot=False) #native sim   
 
     # running pyneb
@@ -31,10 +29,10 @@ for i in simname:
     #def Te_Abund_plot(self, Te = self.linefitdict['TeO3], ion_vals = self.vals[6], integrated_te = self.int_TO3, integrated_abund = self.int_OppH,chem_abund, chem_abund_emp, testline = 4363, z = 1, log_ion_sun = -3.31, rad1 = 11.8, rad2 = 17.8, label = '[OIII]', outfilename = 'chem_abundO3_vs_R_present.png')
     #Radius:0, 'Te':1, 'ne':2, 'H+':3, 'O0':4, 'O+':5, 'O++':6, 'N0':7, 'N+':8, 'N++':9, 'S0':10, 'S+':11, 'S++:12
     
-    #rad1 = ([OIII]:11.2, [OII]:11.2, [NII]:13.8, [SIII]:17.6, [SII]: 17.6) -------- z=0.5
-    #rad1 = ([OIII]:9.78, [OII]:9.78, [NII]:13.36, [SIII]:17.35, [SII]: 17.35) -------- z=1
-    #rad1 = ([OIII]:11.92, [OII]:11.92, [NII]:14.15, [SIII]:17.5, [SII]: 17.5) -------- z=0.2
-    #rad1 = ([OIII]:11.17, [OII]:11.17, [NII]:13.83, [SIII]:17.5, [SII]: 17.5) -------- z=0.4
+    #rad1 = ([OIII]:11.2, [OII]:11.2, [NII]:13.8, [SIII]:17.6, [SII]: 17.6) --------      z=0.5
+    #rad1 = ([OIII]:9.78, [OII]:9.78, [NII]:13.36, [SIII]:17.35, [SII]: 17.35) --------   z=1
+    #rad1 = ([OIII]:11.92, [OII]:11.92, [NII]:14.15, [SIII]:17.5, [SII]: 17.5) --------   z=0.2
+    #rad1 = ([OIII]:11.17, [OII]:11.17, [NII]:13.83, [SIII]:17.5, [SII]: 17.5) --------   z=0.4
     #rad1 = ([OIII]:10.75, [OII]:10.75, [NII]:13.65, [SIII]:17.41, [SII]: 17.41) -------- z=0.6
     #rad1 = ([OIII]:10.26, [OII]:10.26, [NII]:13.44, [SIII]:17.33, [SII]: 17.33) -------- z=0.8
 

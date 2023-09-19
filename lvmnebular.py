@@ -1007,7 +1007,7 @@ class simulation:
         ax1.axhline(y=np.average(ion_vals), c='cyan', linestyle='--', label='avg_rel_ion_abund_'+ label)
 
         ax1.legend(loc='upper left')  
-        ax1.set_ylabel('ionic abund '+ label) 
+        ax1.set_ylabel('relative ionic abund '+ label) 
         ax1.set_title('Chemical abundance correlation with electron temperture for ' +label)
 
 
@@ -1020,7 +1020,7 @@ class simulation:
 
         ax2.axhline(y=integrated_te, c='cyan', linestyle='--', label='Integrated Te '+label+'measurement')   
         ax2.axhline(y=self.avgTe, c='blue', linestyle='--', label='Average Te')   
-
+        
         ax2.set_ylim(self.avgTe -2000, self.avgTe+3000)
         ax2.set_ylabel('Te '+label+'(K)')  
         ax2.legend(loc='upper left')     
@@ -1063,7 +1063,10 @@ class simulation:
         #plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_snbinned/Bubble_v2_5e-14_snbinned_plotprofile/snbin_TeO3_chem_abundO3_vs_R.png', dpi=300)  
         #plt.show()  
 
-    
+        te_adf = np.sum(np.nanmean(rad*(Te - self.avgTe)**2 *120*self.linefitdict['neO2']))/np.sum(np.nanmean(rad*self.avgTe**2 *120*self.linefitdict['neO2']))
+        print('ADF '+label+':',te_adf)
+
+
     def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
 
             '''
