@@ -1123,6 +1123,7 @@ class simulation:
         print('ADF '+label+':',te_adf)
         '''
 
+
     def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
 
             '''
