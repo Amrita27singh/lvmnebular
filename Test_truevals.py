@@ -25,7 +25,7 @@ print("True Te:",vals[1],vals[1].shape)
 print("True Ne:",vals[2],vals[2].shape)
 
 datadir = '/home/amrita/LVM/lvmnebular/'+simname+ '/'
-plotdir=datadir+'plotprofile/'
+plotdir=datadir+'plot_true_ne_profile/'
 if not (os.path.isdir(plotdir)):
     os.mkdir(plotdir)
 
@@ -35,7 +35,7 @@ ax3.plot(vals[0], vals[1], label='True Te')
 ax3.set_xlabel('Radius(pc)')
 ax3.set_ylabel('Gas Te (K)')
 ax3.set_title('True Te radial variation')
-plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plotprofile/Te vs R.png', dpi=300)
+plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plot_true_ne_profile/Te vs R.png', dpi=300)
 plt.show()
 
 
@@ -45,7 +45,7 @@ ax4.plot(vals[0], vals[2], label='True ne')
 ax4.set_xlabel('Radius(pc)')
 ax4.set_ylabel('Gas ne (cm^-3)')
 ax4.set_title('True ne radial variation')
-plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plotprofile/ne vs R.png', dpi=300)
+plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plot_true_ne_profile/ne vs R.png', dpi=300)
 plt.show()
 
 
@@ -55,7 +55,7 @@ ax5.plot(vals[2], vals[1], label='Te_vs_ne')
 ax5.set_xlabel('ne (cm^-3)')
 ax5.set_ylabel('Te (K)')
 ax5.set_title('True Te vs ne variation')
-plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plotprofile/Te vs ne.png', dpi=300)
+plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plot_true_ne_profile/Te vs ne.png', dpi=300)
 plt.show()
 
 
@@ -71,7 +71,7 @@ ax.legend()
 ax.set_title('Ionic abundances radial variation of Oxygen ions')
 ax.set_xlabel('Radius(pc)')
 ax.set_ylabel('Ionic abundance')
-plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plotprofile/nO vs R.png', dpi=300)
+plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plot_true_ne_profile/nO vs R.png', dpi=300)
 plt.show()
 
 
@@ -87,7 +87,7 @@ ax1.legend()
 ax1.set_title('Ionic abundances radial variation of Nitrogen ions')
 ax1.set_xlabel('Radius(pc)')
 ax1.set_ylabel('Ionic abundance')
-plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plotprofile/nN vs R.png', dpi=300)
+plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plot_true_ne_profile/nN vs R.png', dpi=300)
 plt.show()
 
 ### Te(S) vs R(pc)
@@ -102,5 +102,5 @@ ax2.legend()
 ax2.set_title('Ionic abundances radial variation of Sulphur ions')
 ax2.set_xlabel('Radius(pc)')
 ax2.set_ylabel('Ionic abundance')
-plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plotprofile/nS vs R.png', dpi=300)
+plt.savefig('/home/amrita/LVM/lvmnebular/'+simname+'/plot_true_ne_profile/nS vs R.png', dpi=300)
 plt.show()

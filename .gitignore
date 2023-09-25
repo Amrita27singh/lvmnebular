@@ -24,3 +24,5 @@ lvmnebular.cpython*
 __pycache__/lvmnebular.cpython-38.pyc
 *.fits
 Perturbation*
+Pert*
+Perturbed*

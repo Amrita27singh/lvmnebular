@@ -4,12 +4,12 @@ import matplotlib.pyplot as plt
 import os
 
 u=lvmnebular.simulation()
-#simname = np.array(['Bubble_v2_1e-8', 'Bubble_v2_5e-14', 'Bubble_v2_1e-8_z_0.2', 'Bubble_v2_5e-14_Z_0.2', 'Bubble_v2_1e-8_z_0.4', 'Bubble_v2_5e-14_Z_0.4', 'Bubble_v2_1e-8_z_0.6', 
-#'Bubble_v2_5e-14_Z_0.6', 'Bubble_v2_1e-8_z_0.8', 'Bubble_v2_5e-14_Z_0.8'])
+simname = np.array(['Bubble_v2_1e-8', 'Bubble_v2_5e-14', 'Bubble_v2_1e-8_z_0.2', 'Bubble_v2_5e-14_z_0.2', 'Bubble_v2_1e-8_z_0.4', 'Bubble_v2_5e-14_z_0.4', 'Bubble_v2_1e-8_z_0.6', 
+'Bubble_v2_5e-14_z_0.6', 'Bubble_v2_1e-8_z_0.8', 'Bubble_v2_5e-14_z_0.8', 'Perturbed_cube_Bubble_v2_1e-8', 'Perturbed_cube_Bubble_v2_5e-14'])
 
 #simname = np.array(['Bubble_v2_1e-8', 'Bubble_v2_5e-14'])
 #simname = np.array(['Bubble_v2_1e-8_z_0.2', 'Bubble_v2_5e-14_z_0.2'])
-simname = np.array(['Bubble_v2_1e-8_z_0.4',  'Bubble_v2_5e-14_z_0.4'])  
+#simname = np.array(['Bubble_v2_1e-8_z_0.4',  'Bubble_v2_5e-14_z_0.4'])  
 #simname = np.array(['Bubble_v2_1e-8_z_0.6', 'Bubble_v2_5e-14_z_0.6'])
 #simname = np.array(['Bubble_v2_1e-8_z_0.8', 'Bubble_v2_5e-14_z_0.8'])
 
@@ -40,45 +40,45 @@ for i in simname:
     #log_ion_sun = -4.17 ----[N]
     #log_ion_sun = -4.88 ----[S]
     
-    s = i.split('_')
-    if len(s)==5:
-        z1= float(s[4])
-
-    else:
-         z1=1
-
-    #[OII]
-    line = 3726    
-    u.Integrated_meas()
-    u.chem_abund(line)
-    u.chem_abund_emperical(line)
-    u.Te_Abund_plot(u.linefitdict['TeO2'], u.vals[5], u.int_TO2, u.int_OpH, u.OpH, u.Abund_O2,  testline = np.array(line), z = z1, log_ion_sun = -3.31, rad1 = 11.17, rad2 = 18, label = '[OII]', outfilename = 'O2_Te_chem_abund_vs_R_present.png')
-    
-    #[OIII]
-    line = 4363  
-    u.Integrated_meas()
-    u.chem_abund(line)
-    u.chem_abund_emperical(line)
-    u.Te_Abund_plot(u.linefitdict['TeO3'], u.vals[6], u.int_TO3, u.int_OppH, u.OppH, u.Abund_O3,  testline = np.array(line), z = z1, log_ion_sun = -3.31, rad1 = 11.17, rad2 = 18, label = '[OIII]', outfilename = 'O3_Te_chem_abund_vs_R_present.png')
-    
-    #[NII]
-    line = 5755   
-    u.Integrated_meas()
-    u.chem_abund(line)
-    u.chem_abund_emperical(line)
-    u.Te_Abund_plot(u.linefitdict['TeN2'], u.vals[8], u.int_TN2, u.int_NpH, u.NpH, u.Abund_N2,  testline = np.array(line), z = z1, log_ion_sun = -4.17, rad1 = 13.83, rad2 = 18, label = '[NII]', outfilename = 'N2_Te_chem_abund_vs_R_present.png')
-
-    #[SII]
-    line = 6716   
-    u.Integrated_meas()
-    u.chem_abund(line)
-    u.chem_abund_emperical(line)
-    u.Te_Abund_plot(u.linefitdict['TeS2'], u.vals[11], u.int_TS2, u.int_SpH, u.SpH, u.Abund_S2,  testline = np.array(line), z = z1, log_ion_sun = -4.88, rad1 = 17.5, rad2 = 18, label = '[SII]', outfilename = 'S2_Te_chem_abund_vs_R_present.png')
-    
-    #[SIII]
-    line = 6312  
-    u.Integrated_meas()
-    u.chem_abund(line)
-    u.chem_abund_emperical(line)
-    u.Te_Abund_plot(u.linefitdict['TeS3'], u.vals[12], u.int_TS3, u.int_SppH, u.SppH, u.Abund_S3,  testline = np.array(line), z = z1, log_ion_sun = -4.88, rad1 = 17.5, rad2 = 18, label = '[SIII]', outfilename = 'S3_Te_chem_abund_vs_R_present.png')
+    #s = i.split('_')
+    #if len(s)==5:
+    #    z1= float(s[4])
+#
+    #else:
+    #     z1=1
+#
+    ##[OII]
+    #line = 3726    
+    #u.Integrated_meas()
+    #u.chem_abund(line)
+    #u.chem_abund_emperical(line)
+    #u.Te_Abund_plot(u.linefitdict['TeO2'], u.vals[5], u.int_TO2, u.int_OpH, u.OpH, u.Abund_O2,  testline = np.array(line), z = z1, log_ion_sun = -3.31, rad1 = 11.92, rad2 = 18, label = '[OII]', outfilename = 'O2_Te_chem_abund_vs_R_present.png')
+    #
+    ##[OIII]
+    #line = 4363  
+    #u.Integrated_meas()
+    #u.chem_abund(line)
+    #u.chem_abund_emperical(line)
+    #u.Te_Abund_plot(u.linefitdict['TeO3'], u.vals[6], u.int_TO3, u.int_OppH, u.OppH, u.Abund_O3,  testline = np.array(line), z = z1, log_ion_sun = -3.31, rad1 = 11.92, rad2 = 18, label = '[OIII]', outfilename = 'O3_Te_chem_abund_vs_R_present.png')
+    #
+    ##[NII]
+    #line = 5755   
+    #u.Integrated_meas()
+    #u.chem_abund(line)
+    #u.chem_abund_emperical(line)
+    #u.Te_Abund_plot(u.linefitdict['TeN2'], u.vals[8], u.int_TN2, u.int_NpH, u.NpH, u.Abund_N2,  testline = np.array(line), z = z1, log_ion_sun = -4.17, rad1 = 14.15, rad2 = 18, label = '[NII]', outfilename = 'N2_Te_chem_abund_vs_R_present.png')
+#
+    ##[SII]
+    #line = 6716   
+    #u.Integrated_meas()
+    #u.chem_abund(line)
+    #u.chem_abund_emperical(line)
+    #u.Te_Abund_plot(u.linefitdict['TeS2'], u.vals[11], u.int_TS2, u.int_SpH, u.SpH, u.Abund_S2,  testline = np.array(line), z = z1, log_ion_sun = -4.88, rad1 = 17.5, rad2 = 18, label = '[SII]', outfilename = 'S2_Te_chem_abund_vs_R_present.png')
+    #
+    ##[SIII]
+    #line = 6312  
+    #u.Integrated_meas()
+    #u.chem_abund(line)
+    #u.chem_abund_emperical(line)
+    #u.Te_Abund_plot(u.linefitdict['TeS3'], u.vals[12], u.int_TS3, u.int_SppH, u.SppH, u.Abund_S3,  testline = np.array(line), z = z1, log_ion_sun = -4.88, rad1 = 17.5, rad2 = 18, label = '[SIII]', outfilename = 'S3_Te_chem_abund_vs_R_present.png')
     
