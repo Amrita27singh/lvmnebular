@@ -19,10 +19,12 @@ simname = 'Bubble_v2_5e-14'
 
 hdu=fits.open('/home/amrita/LVM/lvmnebular/'+simname+'/testneb_tutorial3_ex1.fits')
 vals=hdu['Comp_0_PhysParams'].data
+e_5007 = hdu['COMP_0_FLUX_5006.84'].data
+print(np.mean(e_5007))
 
-print("Radius:",vals[0], vals[0].shape)
-print("True Te:",vals[1],vals[1].shape)
-print("True Ne:",vals[2],vals[2].shape)
+#print("Radius:",vals[0], vals[0].shape)
+#print("True Te:",vals[1],vals[1].shape)
+#print("True Ne:",vals[2],vals[2].shape)
 
 datadir = '/home/amrita/LVM/lvmnebular/'+simname+ '/'
 plotdir=datadir+'plot_true_ne_profile/'

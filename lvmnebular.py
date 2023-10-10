@@ -126,6 +126,7 @@ class simulation:
         self.int_SpH = None
 
         self.avgTe = None
+        self.avg_abund = None
 
         #Chemical abundance using emperical formulae from Perez montero 2017 
         self.Abund_O2 = None
@@ -171,7 +172,7 @@ class simulation:
         vals=hdu['Comp_0_PhysParams'].data
         self.vals=vals
 
-    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6583]) , radbin=False, vorbin=False, snbin=False, pertsim=False, rbinmax=250, drbin=20, loadfile=True, plot=False):  
+    def fitlines(self, sys_vel=0, lines0= np.array([6563, 6584]) , radbin=False, vorbin=False, snbin=False, pertsim=False, rbinmax=250, drbin=20, loadfile=True, plot=False):  
         '''
         This function fits each line in self.lineid in the spectrum of each spaxel and measures fluxes, linewidthsm and line centers
 
@@ -191,8 +192,8 @@ class simulation:
         A table named self.linefitdict which contains ra, dec and fiber Id for each fiber; flux, flux_err, wavelength, wavelength_err, sigma and sigma_err for each line in lines0.
         
         '''
-        self.plot=plot
-        self.lineid=lines0.astype(str)
+        self.plot = plot
+        self.lineid = lines0.astype(str)
         print('Fitting Emmission Lines:', self.lineid)
 
         if (self.nfib == None):
@@ -200,24 +201,24 @@ class simulation:
         
 
         if vorbin:
-            plotdir=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
+            plotdir = self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_linefits.fits'
+            outfilename = self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+self.simname+'_vorbinned_linefits.fits'
 
         elif snbin:
-            plotdir=self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
+            plotdir = self.datadir+self.simname+'/'+self.simname+'_vorbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.datadir+self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_linefits.fits'
+            outfilename = self.datadir+self.simname+'/'+self.simname+'_snbinned/'+self.simname+'_snbinned_linefits.fits'
 
 
         elif radbin:
-            self.rbinmax=rbinmax
-            self.drbin=drbin
+            self.rbinmax = rbinmax
+            self.drbin = drbin
             self.radialbin(rbinmax, drbin, pertsim=False)
 
-            self.simfile=self.datadir+self.simname+'/'+self.simname+'_radbinned'+'/'+self.simname+'_radbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
+            self.simfile = self.datadir+self.simname+'/'+self.simname+'_radbinned'+'/'+self.simname+'_radbinned_linear_full_'+str(int(self.exptime))+'_flux.fits'
 
             with fits.open(self.simfile) as hdu:
                 self.header = hdu[0].header
@@ -226,21 +227,21 @@ class simulation:
                 self.err = hdu['ERR'].data
                 self.fiberdata = Table.read(hdu['FIBERID'])
 
-            self.nfib=len(self.fiberdata)
+            self.nfib = len(self.fiberdata)
             print("no.of bins:", self.nfib)
 
-            plotdir=self.datadir+self.simname+'/'+self.simname+'_radbinned/'+'linefitplots/'
+            plotdir = self.datadir+self.simname+'/'+self.simname+'_radbinned/'+'linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir) 
-            outfilename=self.datadir+self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_linefits.fits'   
+            outfilename = self.datadir+self.simname+'/'+self.simname+'_radbinned/'+self.simname+'_radbinned_linefits.fits'   
 
         else:
-            plotdir=self.datadir+self.simname+'/linefitplots/'
+            plotdir = self.datadir+self.simname+'/linefitplots/'
             if (not os.path.isdir(plotdir)):
                 os.mkdir(plotdir)
-            outfilename=self.datadir+self.simname+'/'+self.simname+'_linefits.fits'
+            outfilename = self.datadir+self.simname+'/'+self.simname+'_linefits.fits'
 
-        self.linefitfile=outfilename 
+        self.linefitfile = outfilename 
         print("linefitfile:",self.linefitfile)
 
         wave = self.wave
@@ -248,17 +249,17 @@ class simulation:
         flux = self.flux
         err = self.err
             
-        c=299792.458   #speed of light in km/s
-        lines=lines0*(1+sys_vel /c)
+        c = 299792.458   #speed of light in km/s
+        lines = lines0*(1+sys_vel /c)
 
         if loadfile:
             
-            t=Table.read(self.linefitfile)
-            self.linefitdict=t
+            t = Table.read(self.linefitfile)
+            self.linefitdict = t
 
         else:
             
-            self.linefitdict= {'fiber_id': [], 
+            self.linefitdict = {'fiber_id': [], 
                     'delta_ra':[], 
                     'delta_dec':[]}
         
@@ -270,7 +271,7 @@ class simulation:
                 self.linefitdict[self.lineid[i]+'_sigma']=[]
                 self.linefitdict[self.lineid[i]+'_sigma_err']=[]
             
-            auxnfib=self.nfib
+            auxnfib = self.nfib
             print(self.nfib)
 
             for i in range(auxnfib):                           # put a limit on auxnfib to examine fittings (ex. auxnfib<5)
@@ -366,14 +367,14 @@ class simulation:
         TO2=np.zeros((self.nfib, niter))
         for i in range (niter):
 
-            f3726=self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
-            f3729=self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
+            f3726= self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
+            f3729= self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
             f7319= self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
             f7320= np.zeros(self.nfib)
-            f7330=np.zeros(self.nfib)
-            f7331=self.linefitdict['7331_flux']+np.random.randn(self.nfib)*self.linefitdict['7331_flux_err']
+            f7330= np.zeros(self.nfib)
+            f7331= self.linefitdict['7331_flux']+np.random.randn(self.nfib)*self.linefitdict['7331_flux_err']
 
-            TO2[:,i]=O2.getTemDen((f3726+f3729)*2/(f7320+f7331+f7319+f7330), den=ne, wave1= 3727.5, wave2=7325)
+            TO2[:,i]=O2.getTemDen((f7320+f7331+f7319+f7330)/(f3726+f3729), den=ne, wave1= 3727.5, wave2=7325)
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
@@ -484,7 +485,12 @@ class simulation:
         
         avgTe = np.sum(self.vals[1]*self.vals[2]*ion)/np.sum(self.vals[2]*ion)                
         self.avgTe = avgTe
+
+    def avg_abundance(self, ion):    #reproducing avergae abund
         
+        avg_abund = np.sum(ion)/np.sum(self.vals[3])                
+        self.avg_abund = avg_abund
+
     def radialbin(self, rbinmax, drbin, pertsim=False):
 
         '''
@@ -830,9 +836,10 @@ class simulation:
             
         elif vals==3726:
             f3726=self.linefitdict['3726_flux']
+            f3729=self.linefitdict['3729_flux']
 
             O2=pn.Atom('O',2)
-            self.OpH=O2.getIonAbundance(int_ratio=100*(f3726)/f4861, tem=self.linefitdict['TeO2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
+            self.OpH=O2.getIonAbundance(int_ratio=100*(f3726+f3729)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
 
         elif vals==5755:
             f6584=self.linefitdict['6584_flux']
@@ -850,7 +857,7 @@ class simulation:
             f6731=self.linefitdict['6731_flux']
 
             S2 = pn.Atom('S',2)
-            self.SpH = S2.getIonAbundance(int_ratio=100*(f6731)/f4861, tem=self.linefitdict['TeS2'], den=self.linefitdict['neO2'], wave=6731, Hbeta=100)  
+            self.SpH = S2.getIonAbundance(int_ratio=100*(f6731)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=6731, Hbeta=100)  
 
     def chem_abund_emperical(self, line):
 
@@ -976,7 +983,7 @@ class simulation:
             int_f6716 += self.linefitdict['6716_flux'][i]
             int_f6731 += self.linefitdict['6731_flux'][i]
             self.int_TS2 = S2.getTemDen((int_f4069+int_f4076)/(int_f6716+int_f6731), den=ne, wave1=4072.5, wave2=6723.5)
-            self.int_SpH = S2.getIonAbundance(int_ratio=100*(int_f6731)/int_f4861, tem= self.int_TS2, den= ne, wave=6731, Hbeta=100)
+            self.int_SpH = S2.getIonAbundance(int_ratio=100*(int_f6731)/int_f4861, tem= self.int_TN2, den= ne, wave=6731, Hbeta=100)
 
 ##################################################################### Plotting methods ##############################################
     
@@ -989,28 +996,37 @@ class simulation:
         lineid=testline.astype(str)
 
         self.projectedTe(ion_vals) 
-        self.avg_Te(ion_vals)        
+        self.avg_Te(ion_vals)
+        self.avg_abundance(ion_vals)        
 
 
         good=self.linefitdict[str(lineid)+'_flux']/self.linefitdict[str(lineid)+'_flux_err']>=3  
         bad= self.linefitdict[str(lineid)+'_flux']/self.linefitdict[str(lineid)+'_flux_err']<3    
 
-        fig, (ax2, ax)=plt.subplots(2, 1, figsize=(12,15))
+        fig, (ax2, ax)=plt.subplots(2, 1, figsize=(15,20))
+
+        plt.rcParams.update({'axes.titlesize': 'x-large',
+                 'axes.labelsize':'X-large',
+                 'axes.linewidth':     '1.8' ,
+                 'ytick.labelsize': 'X-large',
+                 'xtick.labelsize': 'X-large',
+                 'font.size': '12.0',
+                 'legend.fontsize':'large'})
 
         # Electron temperature plots   
         ax2.plot(self.vals[0], self.vals[1], color='red', label='True Te')  
-        ax2.plot(self.R, self.Teproj, color='orange', label='On Sky_Projected_Te') 
+        ax2.plot(self.R, self.Teproj, color='orange', label='On-sky projected Te') 
 
         ax2.plot(rad[good], Te[good], 'o', color='brown', label='Te '+label+'(goodpix)')  
         ax2.plot(rad[bad], Te[bad], 'o', color='brown',   label='Te '+label+'(badpix)', alpha=0.2) 
-
         ax2.axhline(y=integrated_te, c='blue', linestyle='--', label='Integrated Te '+label+' measurement')   
-        ax2.axhline(y=self.avgTe, c='black', linestyle='--', label='Average Te')   
-        
-        ax2.set_ylim(self.avgTe -2000, self.avgTe+3000)
-        ax2.set_ylabel('Te '+label+'(K)')  
+        ax2.axhline(y=self.avgTe, c='black', linestyle='--', label='Average Te') 
+
+        ax2.set_ylim(self.avgTe -3000, self.avgTe+4000)
+        ax2.set_ylabel('Te ('+label+')(K)') 
         ax2.legend(loc='upper left')     
 
+        Y=12+np.log10(integrated_abund)
 
         # O++ ionic abundance  
         Zmodel= z                                           # cloudy model abundance relative to solar  
@@ -1021,50 +1037,57 @@ class simulation:
 
         ax.plot(self.vals[0], 12+logOppHmodel, color='red', label='Model ionic abund')  
         ax.plot(self.R, 12+logOppHproj, color='orange', label='On sky projected ionic abund')  
-
-        ax.axhline(y=12+np.log10(integrated_abund), c='blue', linestyle='--', label='Integrated '+label+' abundance measurement')    
+        ax.axhline(Y, c='blue', linestyle='--', label='Integrated '+label+' abundance measurement')    
+        #ax.axhline(y=self.avg_abund, c='black', linestyle='--', label='Average abund')   
 
         ax.plot(rad[good], 12+np.log10(chem_abund)[good], 'o', color='brown', label='Ionic abundance '+label+'(goodpix)')  
         ax.plot(rad[bad],  12+np.log10(chem_abund)[bad], 'o',  color='brown', label='Ionic abundance '+label+'(badpix)', alpha=0.2)  
 
-        ax.set_ylim(5.5, 9) 
+        ax.set_ylim(Y-3, Y+3) 
         ax2.set_title('Chemical abundance correlation with electron temperture for ' +label)
         ax.set_xlabel('Radius (pc)')  
         ax.set_ylabel(r'$12+ \log({'+label+'} / {HII})$') 
-        ax.legend(loc='lower left')     
-
-
-        #ax1.set_position([0.125, 0.8, 0.775, 0.26])  # [left, bottom, width, height]  
+        ax.legend(loc='best')     
+       
         ax2.set_position([0.125, 0.5, 0.775, 0.3])   
         ax.set_position([0.125, 0.2, 0.775, 0.3])  
-
-
+        
         plotdir=self.datadir+self.simname+'/'+'Only_Te_Abundance_plots_'+self.simname +'/'
         if (not os.path.isdir(plotdir)):
             os.mkdir(plotdir) 
 
-        te_adf = np.sum(np.nanmean(rad*(Te - self.avgTe)**2 *120*self.linefitdict['neO2']))/np.sum(np.nanmean(rad*self.avgTe**2 *120*self.linefitdict['neO2']))
-        print('ADF '+label+':',te_adf)
+        te_adf_T0 = np.sum(self.vals[0]*(self.vals[1] - self.avgTe)**2 *self.vals[2]*ion_vals)/np.sum(self.vals[0]*self.avgTe**2 *self.vals[2]*ion_vals)
+        print('ADF_T0 '+label+':',te_adf_T0)
 
-        plt.savefig('/'+plotdir+'/'+outfilename, dpi=300, bbox_inches = 'tight')
+        #te_adf_projT = np.sum(np.nanmean(self.Teproj - self.avgTe)**2 *120*ion_vals)/np.sum(np.nanmean(self.avgTe**2 *self.vals[2]*ion_vals))
+        #print('ADF_projTe '+label+':',te_adf_projT)
+
+
+        plt.savefig('/'+plotdir+'/'+outfilename, dpi=400, bbox_inches = 'tight')
         #plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_snbinned/Bubble_v2_5e-14_snbinned_plotprofile/snbin_TeO3_chem_abundO3_vs_R.png', dpi=300)  
-        #plt.show() 
+        plt.show() 
+
+
         '''
         #relative ionic abundance plots
-        #fig, (ax1, ax2, ax)=plt.subplots(3, 1, figsize=(15,15)) 
-          
+        fig, (ax1, ax2, ax)=plt.subplots(3, 1, figsize=(15,15)) 
 
-        #ax1.plot(self.vals[0], ion_vals, color='red', label='relative ionic abund '+ label)  
-        #ax1.plot(self.R, self.aproj, color='orange', label='Projected ionic abund ' + label) 
+        plt.rcParams.update({'axes.titlesize': 'x-large',
+                 'axes.labelsize':'X-large',
+                 'axes.linewidth':     '1.8' ,
+                 'ytick.labelsize': 'X-large',
+                 'xtick.labelsize': 'X-large',
+                 'font.size': '12.0',
+                 'legend.fontsize':'large'}) 
 
-        #ax1.axvline(x= rad1, c='red', linestyle='--', label='50% ionization of O to '+ label)  
-        #ax1.axvline(x= rad2, c='black', label='50% ionization of H')
-
-        #ax1.axhline(y=np.average(ion_vals), c='cyan', linestyle='--', label='avg_rel_ion_abund_'+ label)
-
-        #ax1.legend(loc='upper left')  
-        #ax1.set_ylabel('relative ionic abund '+ label) 
-        #ax1.set_title('Chemical abundance correlation with electron temperture for ' +label)
+        ax1.plot(self.vals[0], ion_vals, color='red', label='relative ionic abund '+ label)  
+        ax1.plot(self.R, self.aproj, color='orange', label='Projected ionic abund ' + label) 
+        ax1.axvline(x= rad1, c='red', linestyle='--', label='50% ionization of O to '+ label)  
+        ax1.axvline(x= rad2, c='black', label='50% ionization of H')
+        ax1.axhline(y=np.average(ion_vals), c='cyan', linestyle='--', label='avg_rel_ion_abund_'+ label)
+        ax1.legend(loc='upper left')  
+        ax1.set_ylabel('relative ionic abund '+ label) 
+        ax1.set_title('Chemical abundance correlation with electron temperture for ' +label)
 
 
         # Electron temperature plots   
@@ -1124,7 +1147,7 @@ class simulation:
         '''
 
 
-    def plotmap(self, z, min, max, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
+    def plotmap(self, z, min, max, table, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
 
             '''
             This function will plot 1 D maps of Te, ne and error on Te and ne.
@@ -1165,7 +1188,15 @@ class simulation:
 
             sel=np.isfinite(z)
 
-            newtable=Table.read('diag_Temp_Den.fits')
+            plt.rcParams.update({'axes.titlesize': 'x-large',
+                 'axes.labelsize':'X-large',
+                 'axes.linewidth':     '1.8' ,
+                 'ytick.labelsize': 'X-large',
+                 'xtick.labelsize': 'X-large',
+                 'font.size': '12.0',
+                 'legend.fontsize':'large'})
+
+            newtable=Table.read(table)
             fig, ax = plt.subplots(figsize=(8,5))
             triang = tri.Triangulation(self.linefitdict['delta_ra'][sel].flatten(), self.linefitdict['delta_dec'][sel].flatten()) 
             c = ax.tricontourf(triang, z[sel], levels=np.linspace(min, max, nlevels))    
@@ -1217,6 +1248,14 @@ class simulation:
                 os.mkdir(plotdir)
         
         sel=np.isfinite(z)  
+
+        plt.rcParams.update({'axes.titlesize': 'x-large',
+                 'axes.labelsize':'X-large',
+                 'axes.linewidth':     '1.8' ,
+                 'ytick.labelsize': 'X-large',
+                 'xtick.labelsize': 'X-large',
+                 'font.size': '12.0',
+                 'legend.fontsize':'large'})
             
         distance=16000 #self.pc
 
@@ -1277,6 +1316,14 @@ class simulation:
                 os.mkdir(plotdir)
         
         sel=np.isfinite(z) 
+
+        plt.rcParams.update({'axes.titlesize': 'x-large',
+                 'axes.labelsize':'X-large',
+                 'axes.linewidth':     '1.8' ,
+                 'ytick.labelsize': 'X-large',
+                 'xtick.labelsize': 'X-large',
+                 'font.size': '12.0',
+                 'legend.fontsize':'large'})
 
         distance=16000 #self.pc
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
@@ -1398,12 +1445,14 @@ def fit_gauss(wave, spectrum, error, lwave, dwave=5, plot=True, plotout='linefit
         sigma = error_func(xm, gaussian, popt, pcov)
         fig = plt.figure()
         ax = fig.add_subplot(111)
+
         ax.errorbar(wave, spectrum, error, c='k', label='data')
         ax.scatter(wave[sel], spectrum[sel], c='b', label='data')
         ax.plot(wave[sel], spectrum[sel], c='b', label='masked data')
         ax.set_xlim(lwave-dwave, lwave+dwave)
         ym = gaussian(xm, popt[0], popt[1], popt[2])
         ax.plot(xm, ym, c='r', label='model')
+        
         ax.fill_between(xm, ym+3*sigma, np.max([ym-ym,ym-3*sigma], axis=0), alpha=0.7, 
                     linewidth=3, label='error limits')
         ax.set_ylim(-0.4*spectrum[sel].max(),1.7*np.max([spectrum[sel].max(), (ym+3*sigma).max()]))
