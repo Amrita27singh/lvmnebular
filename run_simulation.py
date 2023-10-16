@@ -42,14 +42,14 @@ sys_vel = 20 #* u.km / u.s
 turbulent_sigma = 15 #* u.km / u.s
 preserve_kinematics = False
 
-frac = np.array([0.5])
-Amp =  np.array([0.1, 0.5])
+n = 5
+frac = np.around(10**np.linspace(-1, 0, n), 3)
 
 for i in frac:
-
+    Amp =  np.around(np.linspace(0.1*i, 0.3*i, n), 3)
     for j in Amp:
 
-        force_use_cube = './Perturbation/'+str(i)+'_'+str(j)+'_pert_Emis_cube.fits'
+        force_use_cube = './Perturbation/pert_em_cubes/'+str(i)+'_'+str(j)+'_pert_Emis_cube.fits'
         name='pert_'+str(i)+'_'+str(j)+'_Bubble_v2_1e-8'
         unit_ra = u.degree
         unit_dec = u.degree
@@ -130,7 +130,7 @@ for i in frac:
         #plt.show()
 
 
-        #filename = '{name}/outputs/{name}_linear_full_input.fits'
+        filename = '{name}/outputs/{name}_linear_full_input.fits'
         with fits.open(f"{name}/outputs/{name}_linear_full_input.fits") as hdu:
             # hdu.info()
             wave = hdu['WAVE'].data

@@ -135,6 +135,11 @@ class simulation:
         self.Abund_S2 = None
         self.Abund_S3 = None
 
+        #chi computation for varying amp and scales of perturbation: gives out: Tp(ion)-T0/T0
+        self.Chi_TeN = None
+        self.Chi_TeO = None
+        self.Chi_TeS = None
+
     def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
 
         self.datadir=datadir
@@ -824,6 +829,14 @@ class simulation:
 
     def chem_abund(self, vals):
 
+        '''
+        This function computes ionic abundances of species using PyNeb.
+
+        Input:
+        vals: wavelength (generally the auroral line Id) to determine ionic abundance of a particular specie
+        
+        '''
+
         f4861=self.linefitdict['4861_flux']  
 
         # intensity ratio of strong lines with H-beta
@@ -861,6 +874,13 @@ class simulation:
 
     def chem_abund_emperical(self, line):
 
+        '''
+        This function computes ionic abundances of species using emperical formulae from P. Montero 2017.
+
+        Input:
+        line: wavelength (generally the auroral line Id) to determine ionic abundance of a particular specie
+        
+        '''
 
         #Emperical formula to compute chemical abund  of [OII]
         if line== 3726:
@@ -911,6 +931,11 @@ class simulation:
 
     def Integrated_meas(self):
         
+        '''
+        This function computes integrated ionic abundances of species.
+        '''
+
+
         O3=pn.Atom('O',3)
         O2=pn.Atom('O',2)
         N2=pn.Atom('N',2)
@@ -985,10 +1010,41 @@ class simulation:
             self.int_TS2 = S2.getTemDen((int_f4069+int_f4076)/(int_f6716+int_f6731), den=ne, wave1=4072.5, wave2=6723.5)
             self.int_SpH = S2.getIonAbundance(int_ratio=100*(int_f6731)/int_f4861, tem= self.int_TN2, den= ne, wave=6731, Hbeta=100)
 
+    def chi(self, simname):
+
+        with fits.open('./'+simname+'/'+simname+' diag_Temp_Den.fits') as hdul:
+            data = hdul[1].data
+            header =hdul[0].header
+            
+            self.Chi_TeN = np.mean(data['TeN2']) - np.mean(self.vals[1])/ np.mean(self.vals[1])
+            self.Chi_TeO = np.mean(data['TeO3']) - np.mean(self.vals[1])/ np.mean(self.vals[1])
+            self.Chi_TeS = np.mean(data['TeS3']) - np.mean(self.vals[1])/ np.mean(self.vals[1])
+
 ##################################################################### Plotting methods ##############################################
     
-    def Te_Abund_plot(self, Te, ion_vals, integrated_te, integrated_abund , chem_abund, chem_abund_emp, testline = np.array(4076), z = 1, log_ion_sun = -3.31, rad1 = 11.8, rad2 = 17.8, label = '[OIII]', outfilename = 'chem_abundO3_vs_R_present.png'): 
+    def Te_Abund_plot(self, Te, ion_vals, integrated_te, integrated_abund , chem_abund, testline = np.array(4076), z = 1, log_ion_sun = -3.31, rad1 = 11.8, rad2 = 17.8, label = '[OIII]', outfilename = 'chem_abundO3_vs_R_present.png'): 
         
+        '''
+        This function will solely created to plot Te and abundance radial variations.
+
+        Input: 
+        Te: Te calculated from PyNeb will be given.
+        Ion_vals: relative ionic abundance of specie. 
+        Integrated_te: Integrated Te computed in Integrated_meas method of specie of interest
+        Integrated_abund: Integrated abundance computed in Integrated_meas method of specie of interest
+        Chem_abund: Abundance computed from Pyneb
+        testline: wavelength of auroral line, not really used in computation, using for if conditions in other methods called inside this method
+        z: metallicity
+        log_ion_sun: solar abundance for the specie
+        rad1: radius at which 50% of the speice has taken place
+        rad2: radius at which 50% of the H has taken place
+        label: Specified to give label to plots
+        outfilename: Defines output file name
+
+        Output:
+        Plots of Te and abundance radial variations as well as ADF (computed from equation 12 in Piembert 1967)        
+        '''
+
         distance=16000 * unit.pc 
         r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2) 
         rad=r*distance*np.pi/648000 # converting arcsecs to parsec
@@ -1035,6 +1091,7 @@ class simulation:
         logOppHmodel = logOHmodel+np.log10(ion_vals)        # ionic abundance of the ion in the model  
         logOppHproj = logOHmodel+np.log10(self.aproj)       # projected ionic abundance of the ion in the model  
 
+
         ax.plot(self.vals[0], 12+logOppHmodel, color='red', label='Model ionic abund')  
         ax.plot(self.R, 12+logOppHproj, color='orange', label='On sky projected ionic abund')  
         ax.axhline(Y, c='blue', linestyle='--', label='Integrated '+label+' abundance measurement')    
@@ -1049,9 +1106,11 @@ class simulation:
         ax.set_ylabel(r'$12+ \log({'+label+'} / {HII})$') 
         ax.legend(loc='best')     
        
+
         ax2.set_position([0.125, 0.5, 0.775, 0.3])   
         ax.set_position([0.125, 0.2, 0.775, 0.3])  
         
+
         plotdir=self.datadir+self.simname+'/'+'Only_Te_Abundance_plots_'+self.simname +'/'
         if (not os.path.isdir(plotdir)):
             os.mkdir(plotdir) 
@@ -1062,10 +1121,9 @@ class simulation:
         #te_adf_projT = np.sum(np.nanmean(self.Teproj - self.avgTe)**2 *120*ion_vals)/np.sum(np.nanmean(self.avgTe**2 *self.vals[2]*ion_vals))
         #print('ADF_projTe '+label+':',te_adf_projT)
 
-
         plt.savefig('/'+plotdir+'/'+outfilename, dpi=400, bbox_inches = 'tight')
         #plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_snbinned/Bubble_v2_5e-14_snbinned_plotprofile/snbin_TeO3_chem_abundO3_vs_R.png', dpi=300)  
-        plt.show() 
+        #plt.show() 
 
 
         '''
