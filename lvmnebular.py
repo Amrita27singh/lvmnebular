@@ -488,11 +488,25 @@ class simulation:
 
     def avg_Te(self, ion):    #reproducing avergae temperature from Eduardo's 2023 Nature paper
         
+        '''
+        This function computes average Te weighted over local density.
+
+        Input:
+        ion: ion for which average Te is determined
+        
+        '''
         avgTe = np.sum(self.vals[1]*self.vals[2]*ion)/np.sum(self.vals[2]*ion)                
         self.avgTe = avgTe
 
     def avg_abundance(self, ion):    #reproducing avergae abund
         
+        '''
+        This function computes average ionic abundance
+
+        Input:
+        ion: ion for which average abund is determined
+        
+        '''
         avg_abund = np.sum(ion)/np.sum(self.vals[3])                
         self.avg_abund = avg_abund
 
@@ -760,6 +774,14 @@ class simulation:
 
     def projectedTe(self, a0, n=1000):
 
+        '''
+        This function computes projected Te weighted over local density.
+
+        Input:
+        a0: ion for which projected Te is determined
+        n: no.of small steps of theta to compute Te at each position
+        
+        '''
         #loading true 3D Radius (108 values)
         r0=self.vals[0]
         #loading true Temperature 
@@ -1012,6 +1034,13 @@ class simulation:
 
     def chi(self, simname):
 
+        '''
+        This function computes Tp-T0/T0 at different scales and amplitudes to see the variations.
+
+        Input:
+        simaname: name of simulation
+
+        '''
         with fits.open('./'+simname+'/'+simname+' diag_Temp_Den.fits') as hdul:
             data = hdul[1].data
             header =hdul[0].header
