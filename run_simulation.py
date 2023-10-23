@@ -42,13 +42,13 @@ sys_vel = 20 #* u.km / u.s
 turbulent_sigma = 15 #* u.km / u.s
 preserve_kinematics = False
 
-n = 5
-frac = np.around(10**np.linspace(-1, 0, n), 3)
-
+n = 6
+frac = np.linspace(6*10**(-2), 1, n)
 for i in frac:
-    Amp =  np.around(np.linspace(0.1*i, 0.3*i, n), 3)
-    for j in Amp:
 
+    Amp =  np.linspace(0.05, 0.2, n)
+    for j in Amp:
+        
         force_use_cube = './Perturbation/pert_em_cubes/'+str(i)+'_'+str(j)+'_pert_Emis_cube.fits'
         name='pert_'+str(i)+'_'+str(j)+'_Bubble_v2_1e-8'
         unit_ra = u.degree

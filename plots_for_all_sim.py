@@ -7,11 +7,11 @@ u=lvmnebular.simulation()
 #simname = np.array(['Bubble_v2_1e-8', 'Bubble_v2_5e-14', 'Bubble_v2_1e-8_z_0.2', 'Bubble_v2_5e-14_z_0.2', 'Bubble_v2_1e-8_z_0.4', 'Bubble_v2_5e-14_z_0.4', 'Bubble_v2_1e-8_z_0.6', 
 #'Bubble_v2_5e-14_z_0.6', 'Bubble_v2_1e-8_z_0.8', 'Bubble_v2_5e-14_z_0.8', 'Perturbed_cube_Bubble_v2_1e-8', 'Perturbed_cube_Bubble_v2_5e-14'])
 
-n = 5
-frac = np.around(10**np.linspace(-1, 0, n), 3)
-
+n = 6
+frac = np.linspace(6*10**(-2), 1, n)
 for i in frac:
-    Amp =  np.around(np.linspace(0.1*i, 0.3*i, n), 3)
+
+    Amp =  np.linspace(0.05, 0.2, n)
     for j in Amp:
 
         simname='pert_'+str(i)+'_'+str(j)+'_Bubble_v2_1e-8'

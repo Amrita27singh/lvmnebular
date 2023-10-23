@@ -740,38 +740,6 @@ class simulation:
             plt.savefig(plotdir+'/'+lineid+'.png')
             plt.show() 
 
-    def pertsim(self, npoints=90, dim=3, n=3, k0=0.5, dk0=0.05 ):
-       
-        '''
-        This function will contain the perturbed line emmissivities for each line Id, 
-        it is a 4D array containing the line emissivities at each value of x, y and z coordinates, and line ids.
-
-        Input:
-
-
-
-        Returns:
-
-        '''
-        
-
-        #new_field=field_powerlaw(n, npoints)
-        new_field=field_delta(k0, dk0, dim, npoints)
-
-        A=0.1 # fluctuation amplitude standard deviation
-        norm_field=new_field/np.std(new_field)*A
-
-        print(np.mean(norm_field), np.std(norm_field))
-        plt.hist(norm_field.flatten())
-        plt.show()
-
-        xx, yy, zz = np.mgrid[0:npoints, 0:npoints, 0:npoints]
-        r = np.sqrt((xx-npoints/2)**2 + (yy-npoints/2)**2 + (zz-npoints/2)**2)
-
-        with imageio.get_writer('./new_field_test_'+str(float(k0))+'.gif', mode='I') as writer:
-            for slice in new_field:
-                writer.append_data(slice)
-
     def projectedTe(self, a0, n=1000):
 
         '''
@@ -1032,7 +1000,7 @@ class simulation:
             self.int_TS2 = S2.getTemDen((int_f4069+int_f4076)/(int_f6716+int_f6731), den=ne, wave1=4072.5, wave2=6723.5)
             self.int_SpH = S2.getIonAbundance(int_ratio=100*(int_f6731)/int_f4861, tem= self.int_TN2, den= ne, wave=6731, Hbeta=100)
 
-    def chi(self, simname):
+    def chi(self, pert_simname, base_simname):
 
         '''
         This function computes Tp-T0/T0 at different scales and amplitudes to see the variations.
@@ -1041,17 +1009,25 @@ class simulation:
         simaname: name of simulation
 
         '''
-        with fits.open('./'+simname+'/'+simname+' diag_Temp_Den.fits') as hdul:
-            data = hdul[1].data
+        with fits.open('./'+pert_simname+'/'+pert_simname+' diag_Temp_Den.fits') as hdul:
+            pert_data = hdul[1].data
+            header =hdul[0].header
+
+        with fits.open('./'+base_simname+'/'+base_simname+' diag_Temp_Den.fits') as hdul:
+            true_data = hdul[1].data
             header =hdul[0].header
             
-            self.Chi_TeN = np.mean(data['TeN2']) - np.mean(self.vals[1])/ np.mean(self.vals[1])
-            self.Chi_TeO = np.mean(data['TeO3']) - np.mean(self.vals[1])/ np.mean(self.vals[1])
-            self.Chi_TeS = np.mean(data['TeS3']) - np.mean(self.vals[1])/ np.mean(self.vals[1])
+        print('pert_TeS:', np.nanmean(pert_data['TeS3']), 'True_TeS:', np.nanmean(true_data['TeS3']),  'error_pert_teS:', np.nanmean(pert_data['TeS3err']))
+        print('pert_TeO:', np.nanmean(pert_data['TeO3']), 'True_TeO:', np.nanmean(true_data['TeO3']),  'error_pert_teO:', np.nanmean(pert_data['TeO3err']))
+        print('pert_TeN:', np.nanmean(pert_data['TeN2']), 'True_TeN:', np.nanmean(true_data['TeN2']),  'error_pert_teN:', np.nanmean(pert_data['TeN2err']))
+
+        self.Chi_TeN = np.divide(np.nanmean(pert_data['TeN2']) - np.nanmean(true_data['TeN2']), np.nanmean(pert_data['TeN2err'])) 
+        self.Chi_TeO = np.divide(np.nanmean(pert_data['TeO3']) - np.nanmean(true_data['TeO3']), np.nanmean(pert_data['TeO3err'])) 
+        self.Chi_TeS = np.divide(np.nanmean(pert_data['TeS3']) - np.nanmean(true_data['TeS3']), np.nanmean(pert_data['TeS3err'])) 
 
 ##################################################################### Plotting methods ##############################################
     
-    def Te_Abund_plot(self, Te, ion_vals, integrated_te, integrated_abund , chem_abund, testline = np.array(4076), z = 1, log_ion_sun = -3.31, rad1 = 11.8, rad2 = 17.8, label = '[OIII]', outfilename = 'chem_abundO3_vs_R_present.png'): 
+    def Te_Abund_plot(self, Te, ion_vals, integrated_te, integrated_abund , chem_abund, chem_abund_emp, testline = np.array(4076), z = 1, log_ion_sun = -3.31, rad1 = 11.8, rad2 = 17.8, label = '[OIII]', outfilename = 'chem_abundO3_vs_R_present.png'): 
         
         '''
         This function will solely created to plot Te and abundance radial variations.
@@ -1569,58 +1545,6 @@ def binrad_spectra(rmin, rmax, radius, spectra, errors):
 
     return newflux, newerr, len(sel)
 
-################################################# Functions used in perturbing the simulation ###########################################
-
-def k_vector(npoints):
-    k1 = np.arange(npoints/2+1)
-    k2 = np.arange(-npoints/2+1, 0)
-    
-    kvector = 2*np.pi/ npoints* np.concatenate([k1, k2])
-    return kvector
-
-def pk_vector_delta(kvector, dim, k0, dk0):
-    
-    npoints = len(kvector)
-    shape = [npoints] * dim
-    kk = np.zeros(shape)
-    
-      
-    for i, j, k in itertools.product(range(npoints), range(npoints), range(npoints)):
-        kk[i, j, k] = np.sqrt(kvector[i]**2 + kvector[j]**2 + kvector[k]**2)
-               
-    print(np.min(kk),np.max(kk))
-    
-    pk=np.zeros_like(kk)
-    sel=(kk > k0-dk0/2)*(kk < k0+dk0/2)
-    pk[sel]=1
-    
-    xx, yy, zz = np.mgrid[0:npoints, 0:npoints, 0:npoints]
-    r = np.sqrt((xx-npoints/2)**2 + (yy-npoints/2)**2 + (zz-npoints/2)**2)
-
-    mask = r > npoints/2
-    mask2 = r < 0.8 * npoints/2
-    pk[mask*mask2]=0
-    #pk[mask]=0
-
-    pk[0,0,0] = 0
-    
-    return pk
-
-def field_delta(k0, dk0, dim, npoints):
-    
-    k = k_vector(npoints)
-    pk = pk_vector_delta(k, dim, k0, dk0)
-    Pk1 = np.zeros_like(pk)
-    #Pk1 /= Pk1.sum()
-    Pk1 = pk
-
-    field=np.random.randn(npoints, npoints, npoints)
-    fft_field=fftn(field)
-    
-    pspect_field = np.sqrt(Pk1) * fft_field
-    new_field = np.real(ifftn(pspect_field))
-    
-    return new_field
 
 
 
