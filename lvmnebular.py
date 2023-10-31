@@ -1021,10 +1021,11 @@ class simulation:
         print('pert_TeO:', np.nanmean(pert_data['TeO3']), 'True_TeO:', np.nanmean(true_data['TeO3']),  'error_pert_teO:', np.nanmean(pert_data['TeO3err']))
         print('pert_TeN:', np.nanmean(pert_data['TeN2']), 'True_TeN:', np.nanmean(true_data['TeN2']),  'error_pert_teN:', np.nanmean(pert_data['TeN2err']))
 
-        self.Chi_TeN = np.divide(np.nanmean(pert_data['TeN2']) - np.nanmean(true_data['TeN2']), np.nanmean(pert_data['TeN2err'])) 
-        self.Chi_TeO = np.divide(np.nanmean(pert_data['TeO3']) - np.nanmean(true_data['TeO3']), np.nanmean(pert_data['TeO3err'])) 
-        self.Chi_TeS = np.divide(np.nanmean(pert_data['TeS3']) - np.nanmean(true_data['TeS3']), np.nanmean(pert_data['TeS3err'])) 
+        self.Chi_TeN = np.divide(np.nan(pert_data['TeN2']) - np.nan(true_data['TeN2']), np.nan(pert_data['TeN2err'])) 
+        self.Chi_TeO = np.divide(np.nan(pert_data['TeO3']) - np.nan(true_data['TeO3']), np.nan(pert_data['TeO3err'])) 
+        self.Chi_TeS = np.divide(np.nan(pert_data['TeS3']) - np.nan(true_data['TeS3']), np.nan(pert_data['TeS3err'])) 
 
+        
 ##################################################################### Plotting methods ##############################################
     
     def Te_Abund_plot(self, Te, ion_vals, integrated_te, integrated_abund , chem_abund, chem_abund_emp, testline = np.array(4076), z = 1, log_ion_sun = -3.31, rad1 = 11.8, rad2 = 17.8, label = '[OIII]', outfilename = 'chem_abundO3_vs_R_present.png'): 
