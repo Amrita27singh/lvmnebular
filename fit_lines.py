@@ -27,10 +27,9 @@ def error_func(wave, gaussian, popt, pcov, e=1e-7):
     
     dfdx=(gaussian(wave, popt[0]*(1+e), popt[1], popt[2])-f0)/(popt[0]*e)
     dfdy=(gaussian(wave, popt[0], popt[1]*(1+e), popt[2])-f0)/(popt[1]*e)
-    dfdz=(gaussian(wave, popt[0], popt[1],popt[2]*(1+e))-f0)/(popt[2]*e)
+    dfdz=(gaussian(wave, popt[0], popt[1], popt[2]*(1+e))-f0)/(popt[2]*e)
     
     df=(dfdx, dfdy, dfdz)
-    
 
     dx=df[0]**2*pcov[0][0]
     dy=df[1]**2*pcov[1][1]
@@ -44,7 +43,7 @@ def error_func(wave, gaussian, popt, pcov, e=1e-7):
     sigma=np.sqrt(var)
     return sigma
 
-def fit_gauss(wave, spectrum, error,  lwave, dwave=4, plot=False, plotout='linefit'):
+def fit_gauss(wave, spectrum, error,  lwave, dwave=1, plot=False, plotout='linefit'):
  
     sel=(wave>lwave-dwave/2)*(wave<lwave+dwave/2)
 

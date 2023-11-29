@@ -13,6 +13,7 @@ from vorbin.voronoi_2d_binning import voronoi_2d_binning
 from scipy.interpolate import interp1d
 from scipy.integrate import trapezoid
 import astropy.units as unit
+#import scipy.stats.median_abs_deviation as mad
 
 class simulation:
     '''
@@ -51,6 +52,7 @@ class simulation:
         self.err = None
         self.fiberdata = None
         self.nfib=None
+        self.rad = None
         self.linefitdict=None
 
         self.nfibbin = None
@@ -168,6 +170,12 @@ class simulation:
             self.flux = hdu['TARGET'].data ##2D array(no. of fibers, wave)
             self.err = hdu['ERR'].data
             self.fiberdata = Table.read(hdu['FIBERID'])
+
+        xcen=-27.871710752270467 
+        ycen=6.307154053911007
+        distance = 16000  # Parsecs
+        rad = np.sqrt((self.fiberdata['x'].flatten()-xcen) ** 2 + (self.fiberdata['y'].flatten()-ycen) ** 2) * distance * np.pi / 648000
+        self.rad = rad
 
         self.nfib=len(self.fiberdata)
         print("no.of bins:", self.nfib)
@@ -372,14 +380,16 @@ class simulation:
         TO2=np.zeros((self.nfib, niter))
         for i in range (niter):
 
-            f3726= self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
-            f3729= self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
-            f7319= self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
-            f7320= np.zeros(self.nfib)
-            f7330= np.zeros(self.nfib)
-            f7331= self.linefitdict['7331_flux']+np.random.randn(self.nfib)*self.linefitdict['7331_flux_err']
+            f3726 = self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
+            f3729 = self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
+            f7319 = self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
+            #f7320 = self.linefitdict['7320_flux']+np.random.randn(self.nfib)*self.linefitdict['7320_flux_err']
+            #f7330 = self.linefitdict['7330_flux']+np.random.randn(self.nfib)*self.linefitdict['7330_flux_err']
+            f7320 = np.zeros(self.nfib)
+            f7330 = np.zeros(self.nfib)
+            f7331 = self.linefitdict['7331_flux']+np.random.randn(self.nfib)*self.linefitdict['7331_flux_err']
 
-            TO2[:,i]=O2.getTemDen((f7320+f7331+f7319+f7330)/(f3726+f3729), den=ne, wave1= 3727.5, wave2=7325)
+            TO2[:,i] = O2.getTemDen((f7320+f7331+f7319+f7330)/(f3726+f3729), den=ne, wave1=7325, wave2=3727.5)
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
@@ -397,7 +407,7 @@ class simulation:
             TO3[:,i] = O3.getTemDen((f4363)/(f5007), den=ne, wave1=4363, wave2=5007)
 
     
-        self.TeO3 = np.nanmean(TO3, axis=1)
+        self.TeO3 = np.nanmedian(TO3, axis=1)
         self.TeO3err = np.nanstd(TO3, axis=1)
 
         self.linefitdict['TeO3']=self.TeO3
@@ -531,7 +541,13 @@ class simulation:
             self.err = hdu['ERR'].data
             self.fiberdata = Table.read(hdu['FIBERID'])
 
-        radius = np.sqrt(self.fiberdata['x']**2 + self.fiberdata['y']**2)
+            xcen=-27.871710752270467 
+            ycen=6.307154053911007
+
+            distance = 16000  # Parsecs
+            self.rad = np.sqrt((self.fiberdata['x'].flatten()-xcen) ** 2 + (self.fiberdata['y'].flatten()-ycen) ** 2) * distance * np.pi / 648000
+
+
         bins = np.arange(drbin/2, rbinmax-drbin/2, drbin)
         self.radbins=len(bins)
         nspax=np.zeros(len(bins))
@@ -542,7 +558,7 @@ class simulation:
         newx = []
 
         for i in range(len(bins)-1):
-            nflux, nerr, nsel = binrad_spectra(bins[i]-drbin, bins[i]+drbin, radius, self.flux, self.err)
+            nflux, nerr, nsel = binrad_spectra(bins[i]-drbin, bins[i]+drbin, self.rad, self.flux, self.err)
             nspax[i]=nsel
             radbinned_fluxes[i] = nflux
             radbinned_err[i] = nerr
@@ -599,7 +615,7 @@ class simulation:
         npix=np.array([])
 
         signal, noise=self.linefitdict[lineid+'_flux'], self.linefitdict[lineid+'_flux_err']
-        radius = np.sqrt(self.fiberdata['x']**2 + self.fiberdata['y']**2)
+        radius = self.rad
 
         selected = (radius >= rmin)*(radius < rmax)
         radius_unique=np.unique(radius[selected])
@@ -1024,7 +1040,6 @@ class simulation:
         self.Chi_TeN = np.divide(np.nan(pert_data['TeN2']) - np.nan(true_data['TeN2']), np.nan(pert_data['TeN2err'])) 
         self.Chi_TeO = np.divide(np.nan(pert_data['TeO3']) - np.nan(true_data['TeO3']), np.nan(pert_data['TeO3err'])) 
         self.Chi_TeS = np.divide(np.nan(pert_data['TeS3']) - np.nan(true_data['TeS3']), np.nan(pert_data['TeS3err'])) 
-
         
 ##################################################################### Plotting methods ##############################################
     
@@ -1049,12 +1064,9 @@ class simulation:
 
         Output:
         Plots of Te and abundance radial variations as well as ADF (computed from equation 12 in Piembert 1967)        
-        '''
+        
 
-        distance=16000 * unit.pc 
-        r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2) 
-        rad=r*distance*np.pi/648000 # converting arcsecs to parsec
-
+        rad = self.rad
         lineid=testline.astype(str)
 
         self.projectedTe(ion_vals) 
@@ -1133,8 +1145,21 @@ class simulation:
 
 
         '''
+
+        rad = self.rad
+        lineid=testline.astype(str)
+
+        self.projectedTe(ion_vals) 
+        self.avg_Te(ion_vals)
+        self.avg_abundance(ion_vals)        
+
+
+        good=self.linefitdict[str(lineid)+'_flux']/self.linefitdict[str(lineid)+'_flux_err']>=3  
+        bad= self.linefitdict[str(lineid)+'_flux']/self.linefitdict[str(lineid)+'_flux_err']<3    
+
         #relative ionic abundance plots
-        fig, (ax1, ax2, ax)=plt.subplots(3, 1, figsize=(15,15)) 
+        #fig, (ax1, ax2, ax)=plt.subplots(3, 1, figsize=(15,15)) 
+        fig, (ax1, ax2)=plt.subplots(2, 1, figsize=(15,20)) 
 
         plt.rcParams.update({'axes.titlesize': 'x-large',
                  'axes.labelsize':'X-large',
@@ -1149,7 +1174,7 @@ class simulation:
         ax1.axvline(x= rad1, c='red', linestyle='--', label='50% ionization of O to '+ label)  
         ax1.axvline(x= rad2, c='black', label='50% ionization of H')
         ax1.axhline(y=np.average(ion_vals), c='cyan', linestyle='--', label='avg_rel_ion_abund_'+ label)
-        ax1.legend(loc='upper left')  
+        ax1.legend(loc='lower left')  
         ax1.set_ylabel('relative ionic abund '+ label) 
         ax1.set_title('Chemical abundance correlation with electron temperture for ' +label)
 
@@ -1164,38 +1189,41 @@ class simulation:
         ax2.axhline(y=integrated_te, c='cyan', linestyle='--', label='Integrated Te '+label+'measurement')   
         ax2.axhline(y=self.avgTe, c='blue', linestyle='--', label='Average Te')   
         
-        ax2.set_ylim(self.avgTe -2000, self.avgTe+3000)
+        ax2.set_xlabel('Radius (pc)')  
+        ax2.set_ylabel(r'$12+\log({'+label+'}/{HII})$') 
+        ax2.legend(loc='lower left')     
+        ax2.set_ylim(5000, 9000)
         ax2.set_ylabel('Te '+label+'(K)')  
         ax2.legend(loc='upper left')     
 
 
         # O++ ionic abundance  
-        Zmodel= z                                           # cloudy model abundance relative to solar  
-        logOHsun= log_ion_sun                               # solar abundance patter from GASS (Grevesse et al 2010)  
-        logOHmodel = logOHsun + np.log10(Zmodel)            # total Oxygen elemental abundance in the model  
-        logOppHmodel = logOHmodel+np.log10(ion_vals)        # ionic abundance of the ion in the model  
-        logOppHproj = logOHmodel+np.log10(self.aproj)       # projected ionic abundance of the ion in the model  
-
-        ax.plot(self.vals[0], 12+logOppHmodel, color='red', label='model ionic abund')  
-        ax.plot(self.R, 12+logOppHproj, color='orange', label='Projected model ionic abund')  
-
-        ax.axhline(y=12+np.log10(integrated_abund), c='cyan', linestyle='--', label='Integrated '+label+'Abundance measurement')    
-
-        ax.plot(rad[good], chem_abund_emp[good], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (goodpix)')  
-        ax.plot(rad[bad],  chem_abund_emp[bad], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (badpix)', alpha=0.2)  
-        ax.plot(rad[good], 12+np.log10(chem_abund)[good], 'o', color='red', label='This work goodpix')  
-        ax.plot(rad[bad],  12+np.log10(chem_abund)[bad], 'o', color='red', label='This work badpix', alpha=0.2)  
-
-        ax.set_ylim(4.5, 9) 
-
-        ax.set_xlabel('Radius (pc)')  
-        ax.set_ylabel(r'$12+\log({'+label+'}/{HII})$') 
-        ax.legend(loc='lower left')     
+        #Zmodel= z                                           # cloudy model abundance relative to solar  
+        #logOHsun= log_ion_sun                               # solar abundance patter from GASS (Grevesse et al 2010)  
+        #logOHmodel = logOHsun + np.log10(Zmodel)            # total Oxygen elemental abundance in the model  
+        #logOppHmodel = logOHmodel+np.log10(ion_vals)        # ionic abundance of the ion in the model  
+        #logOppHproj = logOHmodel+np.log10(self.aproj)       # projected ionic abundance of the ion in the model  
+#
+        #ax.plot(self.vals[0], 12+logOppHmodel, color='red', label='model ionic abund')  
+        #ax.plot(self.R, 12+logOppHproj, color='orange', label='Projected model ionic abund')  
+#
+        #ax.axhline(y=12+np.log10(integrated_abund), c='cyan', linestyle='--', label='Integrated '+label+'Abundance measurement')    
+#
+        #ax.plot(rad[good], chem_abund_emp[good], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (goodpix)')  
+        #ax.plot(rad[bad],  chem_abund_emp[bad], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (badpix)', alpha=0.2)  
+        #ax.plot(rad[good], 12+np.log10(chem_abund)[good], 'o', color='red', label='This work goodpix')  
+        #ax.plot(rad[bad],  12+np.log10(chem_abund)[bad], 'o', color='red', label='This work badpix', alpha=0.2)  
+#
+        #ax.set_ylim(4.5, 9) 
+#
+        #ax.set_xlabel('Radius (pc)')  
+        #ax.set_ylabel(r'$12+\log({'+label+'}/{HII})$') 
+        #ax.legend(loc='lower left')     
 
 
         ax1.set_position([0.125, 0.8, 0.775, 0.26])  # [left, bottom, width, height]  
         ax2.set_position([0.125, 0.5, 0.775, 0.3])   
-        ax.set_position([0.125, 0.2, 0.775, 0.3])  
+        #ax.set_position([0.125, 0.2, 0.775, 0.3])  
 
 
         plotdir=self.datadir+self.simname+'/'+'Abundance_plots_'+self.simname +'/'
@@ -1208,9 +1236,7 @@ class simulation:
 
         te_adf = np.sum(np.nanmean(rad*(Te - self.avgTe)**2 *120*self.linefitdict['neO2']))/np.sum(np.nanmean(rad*self.avgTe**2 *120*self.linefitdict['neO2']))
         print('ADF '+label+':',te_adf)
-        '''
-
-
+        
     def plotmap(self, z, min, max, table, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
 
             '''
@@ -1320,11 +1346,13 @@ class simulation:
                  'xtick.labelsize': 'X-large',
                  'font.size': '12.0',
                  'legend.fontsize':'large'})
-            
-        distance=16000 #self.pc
+ 
+        xcen=-27.871710752270467 
+        ycen=6.307154053911007
+        distance = 16000  # Parsecs
+        self.rad = np.sqrt((self.fiberdata['x'].flatten()-xcen) ** 2 + (self.fiberdata['y'].flatten()-ycen) ** 2) * distance * np.pi / 648000
 
-        r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
-        rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
+        rad=self.rad[sel]
         fig, ax = plt.subplots(figsize=(8,5))
         ax.plot(rad, z[sel], '.', label='data')
 
@@ -1389,10 +1417,12 @@ class simulation:
                  'font.size': '12.0',
                  'legend.fontsize':'large'})
 
-        distance=16000 #self.pc
-        r=np.sqrt(self.linefitdict['delta_ra']**2+self.linefitdict['delta_dec']**2)
-        rad=r[sel]*distance*np.pi/648000 # converting arcsecs to parsec
+        xcen=-27.871710752270467 
+        ycen=6.307154053911007
+        distance = 16000  # Parsecs
+        self.rad = np.sqrt((self.fiberdata['x'].flatten()-xcen) ** 2 + (self.fiberdata['y'].flatten()-ycen) ** 2) * distance * np.pi / 648000
 
+        rad=self.rad[sel]
         fig, ax = plt.subplots(1, 1, sharex=True, figsize=(12,8))
         ax.plot(rad, z[sel], '.', label='data') #Te from Pyneb
         ax.plot(self.vals[0], val1, c='grey', label='True profile') #true Te from model
