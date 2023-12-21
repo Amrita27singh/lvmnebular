@@ -36,7 +36,7 @@ bundle = FiberBundle(bundle_name='full', nrings= 8, angle=0, custom_fibers=None)
 ra = 90.5625 # u.degree
 dec = 4.998333 # u.degree
 fov_size = 10 # u.arcmin
-fov_pixel = 5 # u.arcsec
+fov_pixel = 10 # u.arcsec
 distance = 16.0 * u.kpc
 sys_vel = 20 #* u.km / u.s
 turbulent_sigma = 15 #* u.km / u.s
@@ -52,7 +52,7 @@ preserve_kinematics = False
 #        force_use_cube = './Perturbation/pert_em_cubes/'+str(i)+'_'+str(j)+'_pert_Emis_cube.fits'
 #name='pert_'+str(i)+'_'+str(j)+'_Bubble_v2_1e-8'
 
-name='Bubble_v2_5e-14_z_0.2'
+name='Bubble_v2_5e-14'
 unit_ra = u.degree
 unit_dec = u.degree
 unit_size = u.arcmin
@@ -69,7 +69,7 @@ my_lvmfield = LVMField(ra=ra, dec=dec, size=fov_size, pxsize=fov_pixel,
 
 bubble = [{'type': 'Bubble3D', 'max_brightness':5e-14, 'thickness': 0.8, 'radius': 18, 'expansion_velocity': 10, 'sys_velocity': sys_vel, 
           'distance': distance,
-          'model_params': {'Z': 0.2, 'Teff': 40000, 'nH': 100, 'qH': 50.0, 'Geometry': 'Shell'},
+          'model_params': {'Z': 1, 'Teff': 40000, 'nH': 100, 'qH': 50.0, 'Geometry': 'Shell'},
           'model_type': 'cloudy', 'offset_RA':0, 'offset_DEC':0}]
 
 my_lvmfield.add_nebulae(bubble, save_nebulae='testneb_tutorial3_ex1.fits')

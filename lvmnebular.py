@@ -13,6 +13,7 @@ from vorbin.voronoi_2d_binning import voronoi_2d_binning
 from scipy.interpolate import interp1d
 from scipy.integrate import trapezoid
 import astropy.units as unit
+from scipy.interpolate import CubicSpline
 #import scipy.stats.median_abs_deviation as mad
 
 class simulation:
@@ -171,8 +172,9 @@ class simulation:
             self.err = hdu['ERR'].data
             self.fiberdata = Table.read(hdu['FIBERID'])
 
-        xcen=-27.871710752270467 
-        ycen=6.307154053911007
+        xcen=23.842205232069393 
+        ycen=11.777285924657479
+
         distance = 16000  # Parsecs
         rad = np.sqrt((self.fiberdata['x'].flatten()-xcen) ** 2 + (self.fiberdata['y'].flatten()-ycen) ** 2) * distance * np.pi / 648000
         self.rad = rad
@@ -382,14 +384,14 @@ class simulation:
 
             f3726 = self.linefitdict['3726_flux']+np.random.randn(self.nfib)*self.linefitdict['3726_flux_err']
             f3729 = self.linefitdict['3729_flux']+np.random.randn(self.nfib)*self.linefitdict['3729_flux_err']
-            f7319 = self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
-            #f7320 = self.linefitdict['7320_flux']+np.random.randn(self.nfib)*self.linefitdict['7320_flux_err']
+            #f7319 = self.linefitdict['7319_flux']+np.random.randn(self.nfib)*self.linefitdict['7319_flux_err']
+            f7320 = self.linefitdict['7320_flux']+np.random.randn(self.nfib)*self.linefitdict['7320_flux_err']
             #f7330 = self.linefitdict['7330_flux']+np.random.randn(self.nfib)*self.linefitdict['7330_flux_err']
-            f7320 = np.zeros(self.nfib)
+            f7319 = np.zeros(self.nfib)
             f7330 = np.zeros(self.nfib)
             f7331 = self.linefitdict['7331_flux']+np.random.randn(self.nfib)*self.linefitdict['7331_flux_err']
 
-            TO2[:,i] = O2.getTemDen((f7320+f7331+f7319+f7330)/(f3726+f3729), den=ne, wave1=7325, wave2=3727.5)
+            TO2[:,i] = O2.getTemDen((f7320+f7331)/(f3726+f3729), den=ne, to_eval = '(L(7320)+L(7331))/(L(3726)+L(3729))')
 
         self.TeO2 = np.nanmean(TO2, axis=1)
         self.TeO2err = np.nanstd(TO2, axis=1)
@@ -858,7 +860,7 @@ class simulation:
             f3729=self.linefitdict['3729_flux']
 
             O2=pn.Atom('O',2)
-            self.OpH=O2.getIonAbundance(int_ratio=100*(f3726+f3729)/f4861, tem=self.linefitdict['TeN2'], den=self.linefitdict['neO2'], wave=3726, Hbeta=100)
+            self.OpH=O2.getIonAbundance(int_ratio=100*(f3726)/f4861, tem=self.linefitdict['TeN2'], den=np.ones(len(self.linefitdict))*100, wave=3726, Hbeta=100)
 
         elif vals==5755:
             f6584=self.linefitdict['6584_flux']
@@ -870,7 +872,7 @@ class simulation:
             f9532=self.linefitdict['9532_flux']
 
             S3 = pn.Atom('S',3)
-            self.SppH = S3.getIonAbundance(int_ratio=100*(f9532)/f4861, tem=self.linefitdict['TeS3'], den=self.linefitdict['neO2'], wave=9532, Hbeta=100)  
+            self.SppH = S3.getIonAbundance(int_ratio=100*(f9532)/f4861, tem=self.linefitdict['TeS3'], den=self.linefitdict['neS2'], wave=9532, Hbeta=100)  
 
         elif vals==6716:
             f6731=self.linefitdict['6731_flux']
@@ -894,9 +896,10 @@ class simulation:
             I_3726=self.linefitdict['3726_flux'] 
             I_3729=self.linefitdict['3729_flux'] 
             I_4861=self.linefitdict['4861_flux'] 
-            Tl=self.linefitdict['TeO2']/1e4 
-
-            self.Abund_O2=np.log10(np.divide((I_3726+I_3729),I_4861))+5.887+np.divide(1.641,Tl)-0.543*np.log10(Tl)+0.000114*self.linefitdict['neO2']
+            Tl=self.linefitdict['TeN2']/1e4 
+            #Tl = 0.7
+            ne =100
+            self.Abund_O2=np.log10(np.divide((I_3726+I_3729),I_4861))+5.887+np.divide(1.641,Tl)-0.543*np.log10(Tl)+0.000114*ne
             
         elif line == 4363:
             I_4959=self.linefitdict['4959_flux']
@@ -930,7 +933,7 @@ class simulation:
             I_6716=self.linefitdict['6716_flux'] 
             I_6731=self.linefitdict['6731_flux'] 
             I_4861=self.linefitdict['4861_flux'] 
-            Tl=self.linefitdict['TeS2']/1e4 
+            Tl=self.linefitdict['TeN2']/1e4 
 
             #Emperical formula to compute chemical abund of [SII]
             self.Abund_S2=np.log10(np.divide((I_6716+I_6731),I_4861))+5.463+np.divide(0.941,Tl)-0.37*np.log10(Tl)
@@ -1043,7 +1046,8 @@ class simulation:
         
 ##################################################################### Plotting methods ##############################################
     
-    def Te_Abund_plot(self, Te, ion_vals, integrated_te, integrated_abund , chem_abund, chem_abund_emp, testline = np.array(4076), z = 1, log_ion_sun = -3.31, rad1 = 11.8, rad2 = 17.8, label = '[OIII]', outfilename = 'chem_abundO3_vs_R_present.png'): 
+    def Te_Abund_plot(self, Te, ion_vals, integrated_te, integrated_abund , chem_abund, chem_abund_emp, testline = np.array(4076), z = 1, log_ion_sun = -3.31, rad1 = 11.8, 
+                        rad2 = 17.8, label = '[OIII]', outfilename = 'chem_abundO3_vs_R_present.png', label2 =r'$\frac{O^{++}}{H}$'): 
         
         '''
         This function will solely created to plot Te and abundance radial variations.
@@ -1064,86 +1068,6 @@ class simulation:
 
         Output:
         Plots of Te and abundance radial variations as well as ADF (computed from equation 12 in Piembert 1967)        
-        
-
-        rad = self.rad
-        lineid=testline.astype(str)
-
-        self.projectedTe(ion_vals) 
-        self.avg_Te(ion_vals)
-        self.avg_abundance(ion_vals)        
-
-
-        good=self.linefitdict[str(lineid)+'_flux']/self.linefitdict[str(lineid)+'_flux_err']>=3  
-        bad= self.linefitdict[str(lineid)+'_flux']/self.linefitdict[str(lineid)+'_flux_err']<3    
-
-        fig, (ax2, ax)=plt.subplots(2, 1, figsize=(15,20))
-
-        plt.rcParams.update({'axes.titlesize': 'x-large',
-                 'axes.labelsize':'X-large',
-                 'axes.linewidth':     '1.8' ,
-                 'ytick.labelsize': 'X-large',
-                 'xtick.labelsize': 'X-large',
-                 'font.size': '12.0',
-                 'legend.fontsize':'large'})
-
-        # Electron temperature plots   
-        ax2.plot(self.vals[0], self.vals[1], color='red', label='True Te')  
-        ax2.plot(self.R, self.Teproj, color='orange', label='On-sky projected Te') 
-
-        ax2.plot(rad[good], Te[good], 'o', color='brown', label='Te '+label+'(goodpix)')  
-        ax2.plot(rad[bad], Te[bad], 'o', color='brown',   label='Te '+label+'(badpix)', alpha=0.2) 
-        ax2.axhline(y=integrated_te, c='blue', linestyle='--', label='Integrated Te '+label+' measurement')   
-        ax2.axhline(y=self.avgTe, c='black', linestyle='--', label='Average Te') 
-
-        ax2.set_ylim(self.avgTe -3000, self.avgTe+4000)
-        ax2.set_ylabel('Te ('+label+')(K)') 
-        ax2.legend(loc='upper left')     
-
-        Y=12+np.log10(integrated_abund)
-
-        # O++ ionic abundance  
-        Zmodel= z                                           # cloudy model abundance relative to solar  
-        logOHsun= log_ion_sun                               # solar abundance patter from GASS (Grevesse et al 2010)  
-        logOHmodel = logOHsun + np.log10(Zmodel)            # total Oxygen elemental abundance in the model  
-        logOppHmodel = logOHmodel+np.log10(ion_vals)        # ionic abundance of the ion in the model  
-        logOppHproj = logOHmodel+np.log10(self.aproj)       # projected ionic abundance of the ion in the model  
-
-
-        ax.plot(self.vals[0], 12+logOppHmodel, color='red', label='Model ionic abund')  
-        ax.plot(self.R, 12+logOppHproj, color='orange', label='On sky projected ionic abund')  
-        ax.axhline(Y, c='blue', linestyle='--', label='Integrated '+label+' abundance measurement')    
-        #ax.axhline(y=self.avg_abund, c='black', linestyle='--', label='Average abund')   
-
-        ax.plot(rad[good], 12+np.log10(chem_abund)[good], 'o', color='brown', label='Ionic abundance '+label+'(goodpix)')  
-        ax.plot(rad[bad],  12+np.log10(chem_abund)[bad], 'o',  color='brown', label='Ionic abundance '+label+'(badpix)', alpha=0.2)  
-
-        ax.set_ylim(Y-3, Y+3) 
-        ax2.set_title('Chemical abundance correlation with electron temperture for ' +label)
-        ax.set_xlabel('Radius (pc)')  
-        ax.set_ylabel(r'$12+ \log({'+label+'} / {HII})$') 
-        ax.legend(loc='best')     
-       
-
-        ax2.set_position([0.125, 0.5, 0.775, 0.3])   
-        ax.set_position([0.125, 0.2, 0.775, 0.3])  
-        
-
-        plotdir=self.datadir+self.simname+'/'+'Only_Te_Abundance_plots_'+self.simname +'/'
-        if (not os.path.isdir(plotdir)):
-            os.mkdir(plotdir) 
-
-        te_adf_T0 = np.sum(self.vals[0]*(self.vals[1] - self.avgTe)**2 *self.vals[2]*ion_vals)/np.sum(self.vals[0]*self.avgTe**2 *self.vals[2]*ion_vals)
-        print('ADF_T0 '+label+':',te_adf_T0)
-
-        #te_adf_projT = np.sum(np.nanmean(self.Teproj - self.avgTe)**2 *120*ion_vals)/np.sum(np.nanmean(self.avgTe**2 *self.vals[2]*ion_vals))
-        #print('ADF_projTe '+label+':',te_adf_projT)
-
-        plt.savefig('/'+plotdir+'/'+outfilename, dpi=400, bbox_inches = 'tight')
-        #plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_snbinned/Bubble_v2_5e-14_snbinned_plotprofile/snbin_TeO3_chem_abundO3_vs_R.png', dpi=300)  
-        #plt.show() 
-
-
         '''
 
         rad = self.rad
@@ -1153,13 +1077,20 @@ class simulation:
         self.avg_Te(ion_vals)
         self.avg_abundance(ion_vals)        
 
-
         good=self.linefitdict[str(lineid)+'_flux']/self.linefitdict[str(lineid)+'_flux_err']>=3  
         bad= self.linefitdict[str(lineid)+'_flux']/self.linefitdict[str(lineid)+'_flux_err']<3    
 
+        # X+ ionic abundance  
+        Zmodel= z                                           # cloudy model abundance relative to solar  
+        logXHsun= log_ion_sun                               # solar abundance patter from GASS (Grevesse et al 2010)  
+        logXHmodel = logXHsun + np.log10(Zmodel)            # total Oxygen elemental abundance in the model  
+        logXppHmodel = logXHmodel+np.log10(ion_vals)        # ionic abundance of the ion in the model  
+        logXppHproj = logXHmodel+np.log10(self.aproj)       # projected ionic abundance of the ion in the model  
+
+
         #relative ionic abundance plots
-        #fig, (ax1, ax2, ax)=plt.subplots(3, 1, figsize=(15,15)) 
-        fig, (ax1, ax2)=plt.subplots(2, 1, figsize=(15,20)) 
+        fig, (ax1, ax2, ax)=plt.subplots(3, 1, figsize=(15,15)) 
+        #fig, (ax1, ax2)=plt.subplots(2, 1, figsize=(15,20)) 
 
         plt.rcParams.update({'axes.titlesize': 'x-large',
                  'axes.labelsize':'X-large',
@@ -1167,75 +1098,62 @@ class simulation:
                  'ytick.labelsize': 'X-large',
                  'xtick.labelsize': 'X-large',
                  'font.size': '12.0',
-                 'legend.fontsize':'large'}) 
+                 'legend.fontsize':'small'}) 
+        
+        ADF = logXHmodel - np.log10(chem_abund)
+        print('ADF:', np.nanmedian(ADF))
 
+        ax1.scatter(rad, ADF, color = 'navy' , label = 'ADF')
         ax1.plot(self.vals[0], ion_vals, color='red', label='relative ionic abund '+ label)  
         ax1.plot(self.R, self.aproj, color='orange', label='Projected ionic abund ' + label) 
         ax1.axvline(x= rad1, c='red', linestyle='--', label='50% ionization of O to '+ label)  
         ax1.axvline(x= rad2, c='black', label='50% ionization of H')
         ax1.axhline(y=np.average(ion_vals), c='cyan', linestyle='--', label='avg_rel_ion_abund_'+ label)
-        ax1.legend(loc='lower left')  
+        ax1.legend(loc='upper left')  
         ax1.set_ylabel('relative ionic abund '+ label) 
         ax1.set_title('Chemical abundance correlation with electron temperture for ' +label)
-
+        ax1.set_ylim(0, 1.5)
 
         # Electron temperature plots   
         ax2.plot(self.vals[0], self.vals[1], color='red', label='True Te')  
         ax2.plot(self.R, self.Teproj, color='orange', label='On Sky_Projected_Te') 
-
         ax2.plot(rad[good], Te[good], 'o', color='green', label='Te '+label+'goodpix')  
         ax2.plot(rad[bad], Te[bad], 'o', color='green',   label='Te '+label+'badpix', alpha=0.2) 
-
         ax2.axhline(y=integrated_te, c='cyan', linestyle='--', label='Integrated Te '+label+'measurement')   
         ax2.axhline(y=self.avgTe, c='blue', linestyle='--', label='Average Te')   
-        
         ax2.set_xlabel('Radius (pc)')  
         ax2.set_ylabel(r'$12+\log({'+label+'}/{HII})$') 
         ax2.legend(loc='lower left')     
-        ax2.set_ylim(5000, 9000)
+        ax2.set_ylim(np.nanmedian(Te[good])-2000, np.nanmedian(Te[good])+1500)
         ax2.set_ylabel('Te '+label+'(K)')  
         ax2.legend(loc='upper left')     
 
-
-        # O++ ionic abundance  
-        #Zmodel= z                                           # cloudy model abundance relative to solar  
-        #logOHsun= log_ion_sun                               # solar abundance patter from GASS (Grevesse et al 2010)  
-        #logOHmodel = logOHsun + np.log10(Zmodel)            # total Oxygen elemental abundance in the model  
-        #logOppHmodel = logOHmodel+np.log10(ion_vals)        # ionic abundance of the ion in the model  
-        #logOppHproj = logOHmodel+np.log10(self.aproj)       # projected ionic abundance of the ion in the model  
-#
-        #ax.plot(self.vals[0], 12+logOppHmodel, color='red', label='model ionic abund')  
-        #ax.plot(self.R, 12+logOppHproj, color='orange', label='Projected model ionic abund')  
-#
-        #ax.axhline(y=12+np.log10(integrated_abund), c='cyan', linestyle='--', label='Integrated '+label+'Abundance measurement')    
-#
-        #ax.plot(rad[good], chem_abund_emp[good], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (goodpix)')  
-        #ax.plot(rad[bad],  chem_abund_emp[bad], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (badpix)', alpha=0.2)  
-        #ax.plot(rad[good], 12+np.log10(chem_abund)[good], 'o', color='red', label='This work goodpix')  
-        #ax.plot(rad[bad],  12+np.log10(chem_abund)[bad], 'o', color='red', label='This work badpix', alpha=0.2)  
-#
-        #ax.set_ylim(4.5, 9) 
-#
-        #ax.set_xlabel('Radius (pc)')  
-        #ax.set_ylabel(r'$12+\log({'+label+'}/{HII})$') 
-        #ax.legend(loc='lower left')     
+        ax.plot(self.vals[0], 12+logXppHmodel, color='red', label='model ionic abund')  
+        ax.plot(self.R, 12+logXppHproj, color='orange', label='Projected model ionic abund')  
+        ax.axhline(y=12+np.log10(integrated_abund), c='cyan', linestyle='--', label='Integrated '+label+'Abundance measurement')    
+        ax.plot(rad[good], chem_abund_emp[good], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (goodpix)')  
+        ax.plot(rad[bad],  chem_abund_emp[bad], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (badpix)', alpha=0.2)  
+        ax.plot(rad[good], 12+np.log10(chem_abund)[good], 'o', color='red', label='This work goodpix')  
+        ax.plot(rad[bad],  12+np.log10(chem_abund)[bad], 'o', color='red', label='This work badpix', alpha=0.2)  
+        ax.axhline(y=12+logXHmodel, c='green', linestyle='--', label='model abund')   
+        ax.set_ylim(12+logXHmodel-1.25, 12+logXHmodel+0.5) 
+        ax.set_xlabel('Radius (pc)')  
+        ax.set_ylabel('12+log('+label2+')') 
+        ax.legend(loc='lower left')     
 
 
         ax1.set_position([0.125, 0.8, 0.775, 0.26])  # [left, bottom, width, height]  
         ax2.set_position([0.125, 0.5, 0.775, 0.3])   
-        #ax.set_position([0.125, 0.2, 0.775, 0.3])  
-
+        ax.set_position([0.125, 0.2, 0.775, 0.3])  
 
         plotdir=self.datadir+self.simname+'/'+'Abundance_plots_'+self.simname +'/'
         if (not os.path.isdir(plotdir)):
             os.mkdir(plotdir) 
 
         plt.savefig('/'+plotdir+'/'+outfilename, dpi=300, bbox_inches = 'tight')
-        #plt.savefig('/home/amrita/LVM/lvmnebular/Bubble_v2_5e-14/Bubble_v2_5e-14_snbinned/Bubble_v2_5e-14_snbinned_plotprofile/snbin_TeO3_chem_abundO3_vs_R.png', dpi=300)  
-        #plt.show()  
-
-        te_adf = np.sum(np.nanmean(rad*(Te - self.avgTe)**2 *120*self.linefitdict['neO2']))/np.sum(np.nanmean(rad*self.avgTe**2 *120*self.linefitdict['neO2']))
-        print('ADF '+label+':',te_adf)
+        
+        te_df = np.sum(np.nanmean(rad*(Te - self.avgTe)**2 *120*self.linefitdict['neO2']))/np.sum(np.nanmean(rad*self.avgTe**2 *120*self.linefitdict['neO2']))
+        print('t_sqr '+label+':',te_df)
         
     def plotmap(self, z, min, max, table, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
 
@@ -1296,7 +1214,6 @@ class simulation:
             ax.set_ylabel('Dec')
             ax.axis('equal')
             plt.savefig(plotdir+'/'+output+'.png', dpi=200)
-
 
     def plotprofile(self, z, min, max, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
 
@@ -1361,7 +1278,6 @@ class simulation:
         ax.set_xlabel('Radius (parsec)')
         ax.legend()
         plt.savefig(plotdir+'/'+output+'_rad.png', dpi=200)      
-
 
     def overplotprofile(self, z, val1, val2, min, max, x, title='line_map', output='line_map', radbin=False, vorbin=False, snbin=False, pertsim=False):
 
