@@ -1134,8 +1134,10 @@ class simulation:
         ax.plot(rad[good], chem_abund_emp[good], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (goodpix)')  
         ax.plot(rad[bad],  chem_abund_emp[bad], 'o', color='blue', markersize='10', label='Perez-Montero 2017 (badpix)', alpha=0.2)  
         ax.plot(rad[good], 12+np.log10(chem_abund)[good], 'o', color='red', label='This work goodpix')  
-        ax.plot(rad[bad],  12+np.log10(chem_abund)[bad], 'o', color='red', label='This work badpix', alpha=0.2)  
-        ax.axhline(y=12+logXHmodel, c='green', linestyle='--', label='model abund')   
+        ax.plot(rad[bad],  12+np.log10(chem_abund)[bad], 'o', color='red', label='This work badpix', alpha=0.2) 
+
+        ax.axhline(y=12+logXHmodel, c='green', linestyle='--', label='model abund')  
+         
         ax.set_ylim(12+logXHmodel-1.25, 12+logXHmodel+0.5) 
         ax.set_xlabel('Radius (pc)')  
         ax.set_ylabel('12+log('+label2+')') 
