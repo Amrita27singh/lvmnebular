@@ -7,14 +7,14 @@ u=lvmnebular.simulation()
 #simname = np.array(['Bubble_v2_1e-8', 'Bubble_v2_5e-14', 'Bubble_v2_1e-8_z_0.2', 'Bubble_v2_5e-14_z_0.2', 'Bubble_v2_1e-8_z_0.4', 'Bubble_v2_5e-14_z_0.4', 'Bubble_v2_1e-8_z_0.6', 
 #'Bubble_v2_5e-14_z_0.6', 'Bubble_v2_1e-8_z_0.8', 'Bubble_v2_5e-14_z_0.8', 'Perturbed_cube_Bubble_v2_1e-8', 'Perturbed_cube_Bubble_v2_5e-14'])
 
-n = 6
+n = 3
 frac = np.linspace(6*10**(-2), 1, n)
 for i in frac:
 
-    Amp =  np.linspace(0.05, 0.2, n)
+    Amp =  np.linspace(0.05, 0.1, n)
     for j in Amp:
 
-        simname='pert_'+str(i)+'_'+str(j)+'_Bubble_v2_1e-8'
+        simname='pert_'+str(i)+'_'+str(j)+'_Bubble_v2_5e-14'
 
 #simname = np.array(['pert_0.5_0.1_Bubble_v2_1e-8', 'pert_0.5_0.5_Bubble_v2_1e-8'])
 #simname = np.array(['Bubble_v2_1e-8', 'Bubble_v2_5e-14'])
@@ -32,7 +32,7 @@ for i in frac:
         u.fitlines(sys_vel=20, lines0= np.array([9532, 9069, 7319, 7320, 7330, 7331, 6731, 6716, 6584, 6563, 6548, 6312, 5755, 5007, 4959, 4861, 4363, 4069, 4076, 3970, 3729, 3726]), radbin=False, vorbin=False, rbinmax=260, drbin=15, loadfile=False, plot=False) #native sim   
         
         # running pyneb
-        u.runpyneb(niter=6, pertsim=False)
+        u.runpyneb(niter=4, pertsim=False)
 
         #Radius:0, 'Te':1, 'ne':2, 'H+':3, 'O0':4, 'O+':5, 'O++':6, 'N0':7, 'N+':8, 'N++':9, 'S0':10, 'S+':11, 'S++:12
         #rad1 = ([OIII]:11.2, [OII]:11.2, [NII]:13.8, [SIII]:17.6, [SII]: 17.6) --------      z=0.5
@@ -53,11 +53,11 @@ for i in frac:
 
         z1 = 1
         #[OII]
-        #line = 3726    
-        #u.Integrated_meas()
-        #u.chem_abund(line)
-        #u.chem_abund_emperical(line)
-        #u.Te_Abund_plot(u.linefitdict['TeO2'], u.vals[5], u.int_TO2, u.int_OpH, u.OpH, u.Abund_O2,  testline = np.array(line), z = z1, log_ion_sun = -3.31, rad1 = 9.78, rad2 = 18, label = '[OII]', outfilename = 'O2_Te_chem_abund_vs_R_present.png')
+        line = 3726    
+        u.Integrated_meas()
+        u.chem_abund(line)
+        u.chem_abund_emperical(line)
+        u.Te_Abund_plot(u.linefitdict['TeO2'], u.vals[5], u.int_TO2, u.int_OpH, u.OpH, u.Abund_O2,  testline = np.array(line), z = z1, log_ion_sun = -3.31, rad1 = 9.78, rad2 = 18, label = '[OII]', outfilename = 'O2_Te_chem_abund_vs_R_present.png')
         
         #[OIII]
         line = 4363  
@@ -74,11 +74,11 @@ for i in frac:
         u.Te_Abund_plot(u.linefitdict['TeN2'], u.vals[8], u.int_TN2, u.int_NpH, u.NpH, u.Abund_N2,  testline = np.array(line), z = z1, log_ion_sun = -4.17, rad1 = 13.36, rad2 = 18, label = '[NII]', outfilename = 'N2_Te_chem_abund_vs_R_present.png')
         
         #[SII]
-        #line = 6716   
-        #u.Integrated_meas()
-        #u.chem_abund(line)
-        #u.chem_abund_emperical(line)
-        #u.Te_Abund_plot(u.linefitdict['TeS2'], u.vals[11], u.int_TS2, u.int_SpH, u.SpH, u.Abund_S2,  testline = np.array(line), z = z1, log_ion_sun = -4.88, rad1 = 17.35, rad2 = 18, label = '[SII]', outfilename = 'S2_Te_chem_abund_vs_R_present.png')
+        line = 6716   
+        u.Integrated_meas()
+        u.chem_abund(line)
+        u.chem_abund_emperical(line)
+        u.Te_Abund_plot(u.linefitdict['TeS2'], u.vals[11], u.int_TS2, u.int_SpH, u.SpH, u.Abund_S2,  testline = np.array(line), z = z1, log_ion_sun = -4.88, rad1 = 17.35, rad2 = 18, label = '[SII]', outfilename = 'S2_Te_chem_abund_vs_R_present.png')
         
         #[SIII]
         line = 6312  
