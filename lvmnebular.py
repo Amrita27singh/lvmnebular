@@ -1138,7 +1138,7 @@ class simulation:
 
         ax.axhline(y=12+logXHmodel, c='green', linestyle='--', label='model abund')  
          
-        ax.set_ylim(12+logXHmodel-1.25, 12+logXHmodel+0.5) 
+        ax.set_ylim(12+logXHmodel-1.5, 12+logXHmodel+1) 
         ax.set_xlabel('Radius (pc)')  
         ax.set_ylabel('12+log('+label2+')') 
         ax.legend(loc='lower left')     
