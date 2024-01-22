@@ -1150,7 +1150,7 @@ class simulation:
 
         plotdir=self.datadir+self.simname+'/'+'Abundance_plots_'+self.simname +'/'
         if (not os.path.isdir(plotdir)):
-            os.mkdir(plotdir) 
+            os.mkdir(plotdir)
 
         plt.savefig('/'+plotdir+'/'+outfilename, dpi=300, bbox_inches = 'tight')
         
