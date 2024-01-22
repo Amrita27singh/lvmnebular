@@ -1101,7 +1101,7 @@ class simulation:
                  'legend.fontsize':'small'}) 
         
         ADF = logXHmodel - np.log10(chem_abund)
-        print('ADF:', np.nanmedian(ADF))
+        print('ADF'+label+':', 10**(np.nanmedian(ADF)))
 
         ax1.scatter(rad, ADF, color = 'navy' , label = 'ADF')
         ax1.plot(self.vals[0], ion_vals, color='red', label='relative ionic abund '+ label)  
@@ -1154,7 +1154,8 @@ class simulation:
 
         plt.savefig('/'+plotdir+'/'+outfilename, dpi=300, bbox_inches = 'tight')
         
-        te_df = np.sum(np.nanmean(rad*(Te - self.avgTe)**2 *120*self.linefitdict['neO2']))/np.sum(np.nanmean(rad*self.avgTe**2 *120*self.linefitdict['neO2']))
+        te_df = np.sum(np.nanmean(self.rad*(np.nanmedian(self.vals[1]) - np.nanmedian(self.avgTe))**2 *120*np.nanmedian(ion_vals)))/np.sum(np.nanmean(rad*np.nanmedian(self.avgTe)**2*120*np.nanmedian(ion_vals)))
+        #te_df = np.sum(np.nanmean(rad*(Te - self.avgTe)**2 *120*self.linefitdict['neO2']))/np.sum(np.nanmean(rad*self.avgTe**2 *120*self.linefitdict['neO2']))
         print('t_sqr '+label+':',te_df)
         
     def plotmap(self, z, min, max, table, nlevels=40, title='line_map', output='line_map', radbin=False, vorbin=False,  snbin=False, pertsim=False):
