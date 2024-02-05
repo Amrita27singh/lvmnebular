@@ -143,7 +143,7 @@ class simulation:
         self.Chi_TeO = None
         self.Chi_TeS = None
 
-    def loadsim(self, simname, exptime, datadir='/home/amrita/LVM/lvmnebular/', vorbin=False, snbin=False):
+    def loadsim(self, simname, exptime, datadir='/Volumes/amrita/lvmnebular/', vorbin=False, snbin=False):
 
         self.datadir=datadir
         self.simname=simname
